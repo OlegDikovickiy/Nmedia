@@ -13,5 +13,5 @@
     <string name="description_post_like">дескрипшен пост лайк???</string>
     <string name="menu_edit">Изменить</string>
     <string name="error_empty_content">Контент не может быть пустым</string>
-
+    <string name="cancel_editing">Отменить редактирование</string>
 </resources>

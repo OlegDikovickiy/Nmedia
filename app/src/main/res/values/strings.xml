@@ -12,4 +12,5 @@
     <string name="description_post_like">description_post_like</string>
     <string name="menu_edit">Edit</string>
     <string name="error_empty_content">Content can\'t be empty</string>
+    <string name="cancel_editing">Cancel editing</string>
 </resources>
