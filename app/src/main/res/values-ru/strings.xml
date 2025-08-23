@@ -7,4 +7,11 @@
     <string name="like_icon_desc">Лайк</string>
     <string name="repost_icon_desc">Поделиться</string>
     <string name="views_icon_desc">Просмотры</string>
+    <string name="description_post_save">Сохранить</string>
+    <string name="menu_remove">Удалить</string>
+    <string name="post_text">Текст поста</string>
+    <string name="description_post_like">дескрипшен пост лайк???</string>
+    <string name="menu_edit">Изменить</string>
+    <string name="error_empty_content">Контент не может быть пустым</string>
+
 </resources>

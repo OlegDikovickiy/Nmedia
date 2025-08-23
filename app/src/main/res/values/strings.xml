@@ -4,6 +4,12 @@
     <string name="description_post_author_avatar">Post author avatar</string>
     <string name="description_post_menu">Post menu</string>
     <string name="like_icon_desc">Like</string>
-    <string name="repost_icon_desc">Repost</string>
+    <string name="repost_icon_desc">Share</string>
     <string name="views_icon_desc">Views</string>
+    <string name="description_post_save">Save</string>
+    <string name="menu_remove">Remove</string>
+    <string name="post_text">Post Text</string>
+    <string name="description_post_like">description_post_like</string>
+    <string name="menu_edit">Edit</string>
+    <string name="error_empty_content">Content can\'t be empty</string>
 </resources>

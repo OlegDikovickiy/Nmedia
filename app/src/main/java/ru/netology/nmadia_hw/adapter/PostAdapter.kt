@@ -2,6 +2,7 @@ package ru.netology.nmadia_hw.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -9,9 +10,16 @@ import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.databinding.CardPostBinding
 import ru.netology.nmadia_hw.dto.Post
 
-typealias OnItemLikeListener = (post: Post) -> Unit
-typealias OnItemShareListener = (post: Post) -> Unit
+interface OnInteractionListener {
+    fun like (post: Post)
+    fun share (post: Post)
+    fun remove (post: Post)
+    fun edit (post: Post)
+}
 
+//typealias OnItemLikeListener = (post: Post) -> Unit
+//typealias OnItemShareListener = (post: Post) -> Unit
+//typealias OnRemoveListener = (post: Post) -> Unit
 private fun formatCount(count: Int): String {
     return when {
         count < 1_000 -> count.toString()
@@ -23,8 +31,7 @@ private fun formatCount(count: Int): String {
 }
 
 class PostAdapter(
-    private val onItemLikeListener: OnItemLikeListener,
-    private val onItemShareListener: OnItemShareListener
+    private val onInteractionListener: OnInteractionListener
 ) :
     ListAdapter <Post, PostViewHolder>(PostDiffCallback) {
 
@@ -37,7 +44,7 @@ class PostAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val binding = CardPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return PostViewHolder(binding, onItemLikeListener, onItemShareListener)
+        return PostViewHolder(binding, onInteractionListener)
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
@@ -52,8 +59,7 @@ class PostAdapter(
 
 class PostViewHolder(
     private val binding: CardPostBinding,
-    private val onItemLikeListener: OnItemLikeListener,
-    private val onItemShareListener: OnItemShareListener
+    private val onInteractionListener: OnInteractionListener
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(post: Post) {
         binding.apply {
@@ -69,11 +75,29 @@ class PostViewHolder(
             )
 
             likeIcon.setOnClickListener {
-                onItemLikeListener(post)
+                onInteractionListener.like(post)
             }
 
             repostIcon.setOnClickListener {
-                onItemShareListener(post)
+                onInteractionListener.share(post)
+            }
+            menu.setOnClickListener {
+                PopupMenu(it.context, it).apply {
+                    inflate(R.menu.menu_post)
+                    setOnMenuItemClickListener { item ->
+                        when( item.itemId){
+                            R.id.remove -> {
+                                onInteractionListener.remove(post)
+                                true
+                            }
+                            R.id.edit -> {
+                                onInteractionListener.edit(post)
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                }.show()
             }
         }
     }
