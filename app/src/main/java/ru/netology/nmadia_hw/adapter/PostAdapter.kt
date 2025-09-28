@@ -11,10 +11,10 @@ import ru.netology.nmadia_hw.databinding.CardPostBinding
 import ru.netology.nmadia_hw.dto.Post
 
 interface OnInteractionListener {
-    fun like (post: Post)
-    fun share (post: Post)
-    fun remove (post: Post)
-    fun edit (post: Post)
+    fun like(post: Post)
+    fun share(post: Post)
+    fun remove(post: Post)
+    fun edit(post: Post)
 }
 
 //typealias OnItemLikeListener = (post: Post) -> Unit
@@ -33,7 +33,7 @@ private fun formatCount(count: Int): String {
 class PostAdapter(
     private val onInteractionListener: OnInteractionListener
 ) :
-    ListAdapter <Post, PostViewHolder>(PostDiffCallback) {
+    ListAdapter<Post, PostViewHolder>(PostDiffCallback) {
 
 //    var list: List<Post> = emptyList()
 //        @SuppressLint("NotifyDataSetChanged")
@@ -66,13 +66,15 @@ class PostViewHolder(
             author.text = post.author
             published.text = post.published
             content.text = post.content
-            likeCount.text = formatCount(post.likes)
-            repostCount.text = formatCount(post.shares)
-            viewsCount.text = formatCount(post.views)
+//            likeCount.text = formatCount(post.likes)
+//            repostCount.text = formatCount(post.shares)
+//            viewsCount.text = formatCount(post.views)
 
-            likeIcon.setImageResource(
-                if (post.likedByMe) R.drawable.ic_liked else R.drawable.ic_like
-            )
+            likeIcon.isChecked = post.likedByMe
+            likeIcon.text = post.likes.toString()
+            repostIcon.text = post.shares.toString()
+            viewsIcon.text = post.views.toString()
+
 
             likeIcon.setOnClickListener {
                 onInteractionListener.like(post)
@@ -85,15 +87,17 @@ class PostViewHolder(
                 PopupMenu(it.context, it).apply {
                     inflate(R.menu.menu_post)
                     setOnMenuItemClickListener { item ->
-                        when( item.itemId){
+                        when (item.itemId) {
                             R.id.remove -> {
                                 onInteractionListener.remove(post)
                                 true
                             }
+
                             R.id.edit -> {
                                 onInteractionListener.edit(post)
                                 true
                             }
+
                             else -> false
                         }
                     }
@@ -103,7 +107,7 @@ class PostViewHolder(
     }
 }
 
-object PostDiffCallback: DiffUtil.ItemCallback<Post>(){
+object PostDiffCallback : DiffUtil.ItemCallback<Post>() {
     override fun areItemsTheSame(
         oldItem: Post,
         newItem: Post
