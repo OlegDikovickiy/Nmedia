@@ -14,4 +14,6 @@
     <string name="menu_edit">Изменить</string>
     <string name="error_empty_content">Контент не может быть пустым</string>
     <string name="cancel_editing">Отменить редактирование</string>
+    <string name="chooser_share_post">Поделится постом</string>
+    <string name="add_post">Добавить пост</string>
 </resources>

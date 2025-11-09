@@ -17,9 +17,6 @@ interface OnInteractionListener {
     fun edit(post: Post)
 }
 
-//typealias OnItemLikeListener = (post: Post) -> Unit
-//typealias OnItemShareListener = (post: Post) -> Unit
-//typealias OnRemoveListener = (post: Post) -> Unit
 private fun formatCount(count: Int): String {
     return when {
         count < 1_000 -> count.toString()
@@ -32,15 +29,7 @@ private fun formatCount(count: Int): String {
 
 class PostAdapter(
     private val onInteractionListener: OnInteractionListener
-) :
-    ListAdapter<Post, PostViewHolder>(PostDiffCallback) {
-
-//    var list: List<Post> = emptyList()
-//        @SuppressLint("NotifyDataSetChanged")
-//        set(value) {
-//            field = value
-//            notifyDataSetChanged()
-//        }
+) : ListAdapter<Post, PostViewHolder>(PostDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val binding = CardPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -48,13 +37,8 @@ class PostAdapter(
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
-//        val post = list[position]
-//        holder.bind(post)
-        val post = getItem(position)
-        holder.bind(post)
+        holder.bind(getItem(position))
     }
-
-//    override fun getItemCount(): Int = list.size
 }
 
 class PostViewHolder(
@@ -66,9 +50,6 @@ class PostViewHolder(
             author.text = post.author
             published.text = post.published
             content.text = post.content
-//            likeCount.text = formatCount(post.likes)
-//            repostCount.text = formatCount(post.shares)
-//            viewsCount.text = formatCount(post.views)
 
             likeIcon.isChecked = post.likedByMe
             likeIcon.text = post.likes.toString()
@@ -108,18 +89,6 @@ class PostViewHolder(
 }
 
 object PostDiffCallback : DiffUtil.ItemCallback<Post>() {
-    override fun areItemsTheSame(
-        oldItem: Post,
-        newItem: Post
-    ): Boolean {
-        return oldItem.id == newItem.id
-    }
-
-    override fun areContentsTheSame(
-        oldItem: Post,
-        newItem: Post
-    ): Boolean {
-        return oldItem == newItem
-    }
-
+    override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem == newItem
 }

@@ -13,4 +13,6 @@
     <string name="menu_edit">Edit</string>
     <string name="error_empty_content">Content can\'t be empty</string>
     <string name="cancel_editing">Cancel editing</string>
+    <string name="chooser_share_post">Share post</string>
+    <string name="add_post">Add post</string>
 </resources>

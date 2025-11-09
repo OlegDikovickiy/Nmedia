@@ -1,0 +1,18 @@
+package ru.netology.nmadia_hw.activity
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContract
+
+object NewPostResultContract : ActivityResultContract<Unit, String?>() {
+
+    override fun createIntent(context: Context, input: Unit): Intent =
+        Intent(context, NewPostActivity::class.java)
+
+    override fun parseResult(resultCode: Int, intent: Intent?): String? =
+        if (resultCode == android.app.Activity.RESULT_OK)
+            intent?.getStringExtra(android.content.Intent.EXTRA_TEXT)
+        else
+            null
+}
