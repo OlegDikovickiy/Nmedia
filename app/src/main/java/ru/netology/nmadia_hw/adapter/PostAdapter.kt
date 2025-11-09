@@ -1,6 +1,9 @@
 package ru.netology.nmadia_hw.adapter
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
@@ -55,6 +58,17 @@ class PostViewHolder(
             likeIcon.text = post.likes.toString()
             repostIcon.text = post.shares.toString()
             viewsIcon.text = post.views.toString()
+
+            if (!post.video.isNullOrBlank()) {
+                videoContainer.visibility = View.VISIBLE
+                videoContainer.setOnClickListener {
+                    val context = binding.root.context
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.video))
+                    context.startActivity(intent)
+                }
+            } else {
+                videoContainer.visibility = View.GONE
+            }
 
 
             likeIcon.setOnClickListener {

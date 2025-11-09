@@ -21,13 +21,14 @@ class PostRepositoryInMemoryImpl : PostRepository {
         ),
         Post(
             id = nextId++,
-            author = "Пост 2",
-            published = "22 мая в 18:26",
-            content = "Привет, это новая Нетология! Когда-то Нетология начиналась с интенсивов по онлайн-маркетингу. Затем появились курсы по дизайну, разработке, аналитике и управлению. Мы растём сами и помогаем расти студентам: от новичков до уверенных профессионалов. Но самое важное остаётся с нами: мы верим, что в каждом уже есть сила, которая заставляет хотеть больше, целиться выше, бежать быстрее. Наша миссия — помочь встать на путь роста и начать цепочку перемен → http://netolo.gy/fyb",
+            author = "Demo",
+            published = "Сегодня",
+            content = "Пост с видео!",
             likedByMe = false,
-            likes = 22,
+            likes = 1,
             shares = 0,
-            views = 0
+            views = 0,
+            video = "https://rutube.ru/video/6550a91e7e523f9503bed47e4c46d0cb"
         ),
         Post(
             id = nextId++,
@@ -78,6 +79,7 @@ class PostRepositoryInMemoryImpl : PostRepository {
             likes = 0,
             shares = 0,
             views = 0
+
         ),
         Post(
             id = nextId++,
