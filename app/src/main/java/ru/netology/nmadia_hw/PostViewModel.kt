@@ -1,10 +1,13 @@
 package ru.netology.nmadia_hw
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.repository.PostRepository
+import ru.netology.nmadia_hw.repository.PostRepositoryFileImpl
 import ru.netology.nmadia_hw.repository.PostRepositoryInMemoryImpl
 
 private val empty = Post(
@@ -18,8 +21,9 @@ private val empty = Post(
     views = 0,
 )
 
-class PostViewModel : ViewModel() {
-    private val repository: PostRepository = PostRepositoryInMemoryImpl()
+class PostViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository: PostRepository = PostRepositoryFileImpl(application.applicationContext)
+
     val data: LiveData<List<Post>> = repository.getAll()
     val edited = MutableLiveData(empty)
 

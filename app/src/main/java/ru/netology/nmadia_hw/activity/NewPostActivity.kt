@@ -34,17 +34,5 @@ class NewPostActivity : AppCompatActivity() {
             finish()
         }
 
-//        AndroidUtils.showKeyboard(binding.edit)
-//        binding.ok.setOnClickListener {
-//            if (binding.edit.text.isNullOrBlank()) {
-//                setResult(Activity.RESULT_CANCELED)
-//            } else {
-//                val intent = Intent()
-//                val content = binding.edit.text.toString()
-//                intent.putExtra(Intent.EXTRA_TEXT, content)
-//                setResult(Activity.RESULT_OK, intent)
-//            }
-//            finish()
-//        }
     }
 }

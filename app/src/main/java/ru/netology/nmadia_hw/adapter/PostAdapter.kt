@@ -18,6 +18,7 @@ interface OnInteractionListener {
     fun share(post: Post)
     fun remove(post: Post)
     fun edit(post: Post)
+    fun openVideo(url: String)
 }
 
 private fun formatCount(count: Int): String {
@@ -62,9 +63,7 @@ class PostViewHolder(
             if (!post.video.isNullOrBlank()) {
                 videoContainer.visibility = View.VISIBLE
                 videoContainer.setOnClickListener {
-                    val context = binding.root.context
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.video))
-                    context.startActivity(intent)
+                    onInteractionListener.openVideo(post.video!!)
                 }
             } else {
                 videoContainer.visibility = View.GONE
