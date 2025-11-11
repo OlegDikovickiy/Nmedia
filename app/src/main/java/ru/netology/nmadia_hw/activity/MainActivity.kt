@@ -17,6 +17,7 @@ import ru.netology.nmadia_hw.adapter.PostAdapter
 import ru.netology.nmadia_hw.databinding.ActivityMainBinding
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.util.AndroidUtils
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -47,14 +48,14 @@ class MainActivity : AppCompatActivity() {
             override fun like(post: Post) = viewModel.like(post.id)
 
             override fun share(post: Post) {
-                val intent = Intent().apply {
-                    action = Intent.ACTION_SEND
+
+                viewModel.share(post.id)
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
                     putExtra(Intent.EXTRA_TEXT, post.content)
                     type = "text/plain"
                 }
-
-                val chooser = Intent.createChooser(intent, getString(R.string.chooser_share_post))
-                startActivity(chooser)
+                startActivity(Intent.createChooser(intent, getString(R.string.chooser_share_post)))
             }
 
             override fun remove(post: Post) = viewModel.remove(post.id)
