@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.repository.PostRepository
-import ru.netology.nmadia_hw.repository.PostRepositoryFileImpl
+import ru.netology.nmadia_hw.repository.PostRepositorySqliteImpl
 
 private val empty = Post(
     id = 0,
@@ -20,8 +20,7 @@ private val empty = Post(
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository =
-        PostRepositoryFileImpl(application.applicationContext)
+    private val repository: PostRepository = PostRepositorySqliteImpl(application)
 
     val data: LiveData<List<Post>> = repository.getAll()
     val edited = MutableLiveData(empty)
@@ -29,7 +28,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _isEditing = MutableLiveData(false)
     val isEditing: LiveData<Boolean> = _isEditing
 
-    private val _emptyShareError = MutableLiveData<Boolean>(false)
+    private val _emptyShareError = MutableLiveData(false)
     val emptyShareError: LiveData<Boolean> = _emptyShareError
 
     fun like(id: Long) = repository.likeById(id)
