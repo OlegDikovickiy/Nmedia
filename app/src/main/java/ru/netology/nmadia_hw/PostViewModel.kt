@@ -4,11 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.repository.PostRepository
 import ru.netology.nmadia_hw.repository.PostRepositoryFileImpl
-import ru.netology.nmadia_hw.repository.PostRepositoryInMemoryImpl
 
 private val empty = Post(
     id = 0,
@@ -22,13 +20,17 @@ private val empty = Post(
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryFileImpl(application.applicationContext)
+    private val repository: PostRepository =
+        PostRepositoryFileImpl(application.applicationContext)
 
     val data: LiveData<List<Post>> = repository.getAll()
     val edited = MutableLiveData(empty)
 
     private val _isEditing = MutableLiveData(false)
     val isEditing: LiveData<Boolean> = _isEditing
+
+    private val _emptyShareError = MutableLiveData<Boolean>(false)
+    val emptyShareError: LiveData<Boolean> = _emptyShareError
 
     fun like(id: Long) = repository.likeById(id)
     fun share(id: Long) = repository.shareById(id)
@@ -37,7 +39,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun save(text: String) {
         edited.value?.let {
             val content = text.trim()
-            if (content != it.content) {
+            if (content.isNotBlank() && content != it.content) {
                 repository.save(it.copy(content = content))
             }
         }
@@ -53,5 +55,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelEdit() {
         edited.value = empty
         _isEditing.value = false
+    }
+
+    fun showEmptyShareError() {
+        _emptyShareError.value = true
+    }
+
+    fun clearEmptyShareError() {
+        _emptyShareError.value = false
     }
 }

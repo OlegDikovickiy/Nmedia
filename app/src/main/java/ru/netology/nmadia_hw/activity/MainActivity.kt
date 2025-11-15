@@ -3,38 +3,23 @@ package ru.netology.nmadia_hw.activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
-import android.widget.Toast
-import androidx.activity.result.launch
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
-import ru.netology.nmadia_hw.adapter.OnInteractionListener
-import ru.netology.nmadia_hw.adapter.PostAdapter
 import ru.netology.nmadia_hw.databinding.ActivityMainBinding
-import ru.netology.nmadia_hw.dto.Post
-import ru.netology.nmadia_hw.util.AndroidUtils
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: PostViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
 
-    private val newPostLauncher = registerForActivityResult(NewPostResultContract) { result ->
-        result?.let { viewModel.save(it) }
-    }
-
-    private val editPostLauncher =
-        registerForActivityResult(EditPostResultContract) { editedContent ->
-            editedContent?.let { viewModel.save(it) } ?: viewModel.cancelEdit()
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -44,54 +29,35 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val adapter = PostAdapter(object : OnInteractionListener {
-            override fun like(post: Post) = viewModel.like(post.id)
-
-            override fun share(post: Post) {
-
-                viewModel.share(post.id)
-
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    putExtra(Intent.EXTRA_TEXT, post.content)
-                    type = "text/plain"
-                }
-                startActivity(Intent.createChooser(intent, getString(R.string.chooser_share_post)))
-            }
-
-            override fun remove(post: Post) = viewModel.remove(post.id)
-            override fun edit(post: Post) {
-                viewModel.edit(post)
-                editPostLauncher.launch(post.content)
-            }
-            override fun openVideo(url: String) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                if (intent.resolveActivity(packageManager) != null) {
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(
-                        this@MainActivity,
-                        R.string.no_app_for_video,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        })
-
-        binding.list.adapter = adapter
-
-        viewModel.data.observe(this) { posts ->
-            adapter.submitList(posts.toList())
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, PostsFragment.newInstance())
+                .commit()
         }
 
+        handleIncomingShareIntent(intent)
+    }
 
-        viewModel.isEditing.observe(this) {
-            binding.editBlock.visibility = View.GONE
-            binding.inputRow.visibility = View.GONE
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIncomingShareIntent(intent)
+    }
+
+    private fun handleIncomingShareIntent(intent: Intent?) {
+        val it = intent ?: return
+        if (it.action != Intent.ACTION_SEND) return
+
+        val text = it.getStringExtra(Intent.EXTRA_TEXT)
+        if (text.isNullOrBlank()) {
+            viewModel.showEmptyShareError()
+            return
         }
-
-        binding.add.setOnClickListener {
-            newPostLauncher.launch()
-        }
-
+        supportFragmentManager.beginTransaction()
+            .replace(
+                R.id.fragment_container,
+                NewPostFragment.newInstance(initialContent = text)
+            )
+            .addToBackStack(null)
+            .commit()
     }
 }

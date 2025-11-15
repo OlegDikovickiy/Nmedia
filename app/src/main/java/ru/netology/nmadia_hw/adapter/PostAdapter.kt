@@ -1,7 +1,5 @@
 package ru.netology.nmadia_hw.adapter
 
-import android.content.Intent
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,16 +17,7 @@ interface OnInteractionListener {
     fun remove(post: Post)
     fun edit(post: Post)
     fun openVideo(url: String)
-}
-
-private fun formatCount(count: Int): String {
-    return when {
-        count < 1_000 -> count.toString()
-        count < 10_000 -> String.format("%.1fK", count / 1_000.0).replace(".0", "")
-        count < 1_000_000 -> "${count / 1_000}K"
-        count < 10_000_000 -> String.format("%.1fM", count / 1_000_000.0).replace(".0", "")
-        else -> "${count / 1_000_000}M"
-    }
+    fun openPost(post: Post)
 }
 
 class PostAdapter(
@@ -36,7 +25,11 @@ class PostAdapter(
 ) : ListAdapter<Post, PostViewHolder>(PostDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
-        val binding = CardPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = CardPostBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
         return PostViewHolder(binding, onInteractionListener)
     }
 
@@ -49,6 +42,7 @@ class PostViewHolder(
     private val binding: CardPostBinding,
     private val onInteractionListener: OnInteractionListener
 ) : RecyclerView.ViewHolder(binding.root) {
+
     fun bind(post: Post) {
         binding.apply {
             author.text = post.author
@@ -67,8 +61,8 @@ class PostViewHolder(
                 }
             } else {
                 videoContainer.visibility = View.GONE
+                videoContainer.setOnClickListener(null)
             }
-
 
             likeIcon.setOnClickListener {
                 onInteractionListener.like(post)
@@ -77,6 +71,7 @@ class PostViewHolder(
             repostIcon.setOnClickListener {
                 onInteractionListener.share(post)
             }
+
             menu.setOnClickListener {
                 PopupMenu(it.context, it).apply {
                     inflate(R.menu.menu_post)
@@ -97,11 +92,19 @@ class PostViewHolder(
                     }
                 }.show()
             }
+
+            // Клик по карточке (кроме кнопок) — открытие фрагмента поста
+            root.setOnClickListener {
+                onInteractionListener.openPost(post)
+            }
         }
     }
 }
 
 object PostDiffCallback : DiffUtil.ItemCallback<Post>() {
-    override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem.id == newItem.id
-    override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem == newItem
+    override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean =
+        oldItem.id == newItem.id
+
+    override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean =
+        oldItem == newItem
 }
