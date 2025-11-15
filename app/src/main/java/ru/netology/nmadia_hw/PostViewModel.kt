@@ -4,9 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import ru.netology.nmadia_hw.db.AppDb
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.repository.PostRepository
-import ru.netology.nmadia_hw.repository.PostRepositorySqliteImpl
+import ru.netology.nmadia_hw.repository.PostRepositoryRoomImpl
 
 private val empty = Post(
     id = 0,
@@ -20,7 +21,9 @@ private val empty = Post(
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositorySqliteImpl(application)
+    private val repository: PostRepository = PostRepositoryRoomImpl(
+        AppDb.getInstance(application).postDao()
+    )
 
     val data: LiveData<List<Post>> = repository.getAll()
     val edited = MutableLiveData(empty)
