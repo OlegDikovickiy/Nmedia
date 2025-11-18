@@ -23,6 +23,7 @@ class NewPostFragment : Fragment() {
     companion object {
         private const val ARG_INITIAL_CONTENT = "initial_content"
 
+
         fun newInstance(initialContent: String? = null) = NewPostFragment().apply {
             arguments = bundleOf(ARG_INITIAL_CONTENT to initialContent)
         }

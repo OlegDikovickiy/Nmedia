@@ -15,6 +15,7 @@ import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.databinding.FragmentPostDetailsBinding
 import ru.netology.nmadia_hw.dto.Post
+import androidx.navigation.fragment.findNavController
 
 class PostDetailsFragment : Fragment() {
 
@@ -112,18 +113,15 @@ class PostDetailsFragment : Fragment() {
                         when (item.itemId) {
                             R.id.remove -> {
                                 viewModel.remove(post.id)
-                                parentFragmentManager.popBackStack()
+                                // вернуться назад к списку
+                                findNavController().popBackStack()
                                 true
                             }
                             R.id.edit -> {
                                 viewModel.edit(post)
-                                parentFragmentManager.beginTransaction()
-                                    .replace(
-                                        R.id.fragment_container,
-                                        EditPostFragment.newInstance()
-                                    )
-                                    .addToBackStack(null)
-                                    .commit()
+                                findNavController().navigate(
+                                    R.id.action_postDetailsFragment_to_editPostFragment
+                                )
                                 true
                             }
                             else -> false

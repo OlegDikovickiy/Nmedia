@@ -16,4 +16,5 @@
     <string name="chooser_share_post">Share post</string>
     <string name="add_post">Add post</string>
     <string name="no_app_for_video">There is no app to open the video</string>
+    <string name="google_play_unavailable">Google Play Services unavailable</string>
 </resources>

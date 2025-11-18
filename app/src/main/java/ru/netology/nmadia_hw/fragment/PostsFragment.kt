@@ -1,4 +1,4 @@
-package ru.netology.nmadia_hw.activity
+package ru.netology.nmadia_hw.fragment
 
 import android.content.Intent
 import android.net.Uri
@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
@@ -21,7 +22,7 @@ import ru.netology.nmadia_hw.util.AndroidUtils
 class PostsFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(
-        ownerProducer = { requireActivity() } // общая ViewModel для всех фрагментов
+        ownerProducer = { requireActivity() }
     )
 
     private var _binding: FragmentPostsBinding? = null
@@ -29,6 +30,7 @@ class PostsFragment : Fragment() {
 
     companion object {
         fun newInstance() = PostsFragment()
+        private const val ARG_POST_ID = "POST_ID"
     }
 
     override fun onCreateView(
@@ -66,6 +68,7 @@ class PostsFragment : Fragment() {
 
             override fun edit(post: Post) {
                 viewModel.edit(post)
+                findNavController().navigate(R.id.action_feedFragment_to_editPostFragment)
             }
 
             override fun openVideo(url: String) {
@@ -82,13 +85,14 @@ class PostsFragment : Fragment() {
             }
 
             override fun openPost(post: Post) {
-                parentFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.fragment_container,
-                        PostDetailsFragment.newInstance(post.id)
-                    )
-                    .addToBackStack(null)
-                    .commit()
+                // переход к деталям поста через nav_graph
+                val args = Bundle().apply {
+                    putLong(ARG_POST_ID, post.id)
+                }
+                findNavController().navigate(
+                    R.id.action_feedFragment_to_postDetailsFragment,
+                    args
+                )
             }
         })
 
@@ -99,7 +103,17 @@ class PostsFragment : Fragment() {
             adapter.submitList(posts.toList())
         }
 
-        // Состояние редактирования
+        // скрывать/показывать FAB при редактировании
+        viewModel.isEditing.observe(viewLifecycleOwner) { isEditing ->
+            binding.add.visibility = if (isEditing) View.GONE else View.VISIBLE
+        }
+
+        // кнопка добавления поста — просто навигация
+        binding.add.setOnClickListener {
+            findNavController().navigate(R.id.action_feedFragment_to_newPostFragment)
+        }
+
+        // блок редактирования снизу (inline-редактор)
         viewModel.edited.observe(viewLifecycleOwner) { post ->
             val isEditing = post.id != 0L
             binding.editBlock.visibility = if (isEditing) View.VISIBLE else View.GONE
@@ -113,19 +127,6 @@ class PostsFragment : Fragment() {
             }
         }
 
-
-        viewModel.isEditing.observe(viewLifecycleOwner) { isEditing ->
-            binding.add.visibility = if (isEditing) View.GONE else View.VISIBLE
-        }
-
-        binding.add.setOnClickListener {
-            // Переход на фрагмент создания нового поста
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, NewPostFragment.newInstance())
-                .addToBackStack(null)
-                .commit()
-        }
-
         binding.cancelEdit.setOnClickListener {
             viewModel.cancelEdit()
             AndroidUtils.hideKeyboard(binding.content)
@@ -137,7 +138,6 @@ class PostsFragment : Fragment() {
             AndroidUtils.hideKeyboard(binding.content)
         }
 
-        // Ошибка пустого шэра (пришла из MainActivity через ViewModel)
         viewModel.emptyShareError.observe(viewLifecycleOwner) { show ->
             if (show == true) {
                 Toast.makeText(

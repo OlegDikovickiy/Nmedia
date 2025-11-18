@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/feedFragment">
+
+    <!-- Список постов -->
+    <fragment
+        android:id="@+id/feedFragment"
+        android:name="ru.netology.nmadia_hw.fragment.PostsFragment"
+        android:label="feed">
+
+        <!-- К созданию нового поста -->
+        <action
+            android:id="@+id/action_feedFragment_to_newPostFragment"
+            app:destination="@id/newPostFragment" />
+
+        <!-- К деталям поста -->
+        <action
+            android:id="@+id/action_feedFragment_to_postDetailsFragment"
+            app:destination="@id/postDetailsFragment" />
+
+        <!-- (опционально) из списка сразу на экран редактирования -->
+        <action
+            android:id="@+id/action_feedFragment_to_editPostFragment"
+            app:destination="@id/editPostFragment" />
+    </fragment>
+
+    <!-- Создание поста (в том числе из ACTION_SEND) -->
+    <fragment
+        android:id="@+id/newPostFragment"
+        android:name="ru.netology.nmadia_hw.activity.NewPostFragment"
+        android:label="new_post" >
+        <!-- сюда можно позже добавить аргумент initial_content через Safe Args -->
+    </fragment>
+
+    <!-- Детальный экран поста -->
+    <fragment
+        android:id="@+id/postDetailsFragment"
+        android:name="ru.netology.nmadia_hw.activity.PostDetailsFragment"
+        android:label="post_details">
+
+        <!-- Из деталей на экран редактирования -->
+        <action
+            android:id="@+id/action_postDetailsFragment_to_editPostFragment"
+            app:destination="@id/editPostFragment" />
+    </fragment>
+
+    <!-- Отдельный экран редактирования поста -->
+    <fragment
+        android:id="@+id/editPostFragment"
+        android:name="ru.netology.nmadia_hw.activity.EditPostFragment"
+        android:label="edit_post" />
+
+</navigation>
