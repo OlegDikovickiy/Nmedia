@@ -18,4 +18,5 @@
     <string name="add_post">Добавить пост</string>
     <string name="no_app_for_video">Нет приложения для открытия видео</string>
     <string name="google_play_unavailable">Google Play Services недоступны</string>
+    <string name="new_post_title_format">%1$s опубликовал новый пост:</string>
 </resources>

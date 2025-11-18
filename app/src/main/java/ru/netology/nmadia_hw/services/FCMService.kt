@@ -25,13 +25,20 @@ class FCMService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val data = message.data
-        val postIdFromData = data["post_id"]?.toLongOrNull()
 
-        // безопасный разбор action из data
+        // action из data
         val action = Action.from(data["action"])
 
-        val title = message.notification?.title ?: getString(R.string.app_name)
-        val body = message.notification?.body ?: data["content"].orEmpty()
+        // данные о посте (для NEW_POST)
+        val author = data["author"].orEmpty()
+        val content = data["content"].orEmpty()
+
+        // если ещё присылаешь post_id — достаём и используем для навигации
+        val postIdFromData = data["post_id"]?.toLongOrNull()
+
+        // title/body из notification-пэйлоада (fallback, если нет data-ключей)
+        val titleFromNotification = message.notification?.title
+        val bodyFromNotification = message.notification?.body
 
         Log.d(TAG, "onMessageReceived: data=$data, action=$action")
 
@@ -68,36 +75,49 @@ class FCMService : FirebaseMessagingService() {
             .setAutoCancel(true)
 
         when (action) {
-            Action.LIKE -> {
-                // просто используем title/body как есть
-                builder.setContentTitle(title)
-                    .setContentText(
-                        if (body.isNotBlank()) body
-                        else getString(R.string.app_name)
+            Action.NEW_POST -> {
+                // Формат:
+                // "<имя пользователя> опубликовал новый пост:"
+                // "Текст поста... (на несколько строк)"
+                val title = if (author.isNotBlank()) {
+                    getString(R.string.new_post_title_format, author)
+                } else {
+                    titleFromNotification ?: getString(R.string.app_name)
+                }
+
+                // Текст поста может быть длинным: показываем BigTextStyle
+                builder
+                    .setContentTitle(title)
+                    .setContentText(content.take(40)) // короткий превью‑текст в свернутом виде
+                    .setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .bigText(content)
                     )
             }
 
-            Action.NEW_POST -> {
-                builder.setContentTitle(title)
-                    .setContentText(
-                        if (body.isNotBlank()) body
-                        else getString(R.string.app_name)
-                    )
+            Action.LIKE -> {
+                // Простой пример для лайка (можно доработать)
+                val title = titleFromNotification ?: getString(R.string.app_name)
+                val body = bodyFromNotification ?: content
+                builder
+                    .setContentTitle(title)
+                    .setContentText(body)
             }
 
             null -> {
-                // неизвестное действие: логируем и показываем дефолтный текст
+                // Неизвестное или не заданное действие: безопасная дефолтная ветка
                 Log.w(TAG, "Unknown action: ${data["action"]}")
-                builder.setContentTitle(title)
-                    .setContentText(
-                        if (body.isNotBlank()) body
-                        else getString(R.string.app_name)
-                    )
+                val title = titleFromNotification ?: getString(R.string.app_name)
+                val body = bodyFromNotification ?: content
+                builder
+                    .setContentTitle(title)
+                    .setContentText(body)
             }
         }
 
         notificationManager.notify(1, builder.build())
 
+        // Toast при notification-пэйлоаде в форграунде (как в лекции)
         if (message.notification?.body != null) {
             Toast.makeText(this, message.notification?.body, Toast.LENGTH_SHORT).show()
         }
@@ -108,6 +128,10 @@ class FCMService : FirebaseMessagingService() {
         PushRepository.sendPushToken(token)
     }
 }
+
+/**
+ * Enum действий + безопасный парсинг для задачи Exceptions.
+ */
 enum class Action {
     LIKE,
     NEW_POST;
