@@ -9,6 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.netology.nmadia_hw.dto.Post
+import ru.netology.nmadia_hw.model.FeedModel
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -29,14 +30,29 @@ class PostRepositoryRoomImpl : PostRepository {
         .connectTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val data = MutableLiveData<List<Post>>(emptyList())
+    private val state = MutableLiveData(FeedModel())
 
-    override fun getAll(): LiveData<List<Post>> {
-        loadPosts()
-        return data
+    override fun getAll(): LiveData<FeedModel> {
+        loadPosts(isRefreshing = false)
+        return state
     }
 
-    private fun loadPosts() {
+    override fun refresh() {
+        loadPosts(isRefreshing = true)
+    }
+
+    private fun loadPosts(isRefreshing: Boolean) {
+        val prev = state.value ?: FeedModel()
+
+        state.postValue(
+            prev.copy(
+                loading = !isRefreshing && prev.posts.isEmpty(),
+                refreshing = isRefreshing,
+                error = false,          // сброс ошибки при каждом запросе
+                empty = false,
+            )
+        )
+
         thread {
             val request = Request.Builder()
                 .url("${BASE_URL}api/posts")
@@ -44,20 +60,58 @@ class PostRepositoryRoomImpl : PostRepository {
 
             try {
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@thread
-                    val body = response.body?.string() ?: return@thread
+                    if (!response.isSuccessful) {
+                        val current = state.value ?: FeedModel()
+                        state.postValue(
+                            current.copy(
+                                loading = false,
+                                refreshing = false,
+                                error = true,
+                            )
+                        )
+                        return@thread
+                    }
+
+                    val body = response.body?.string() ?: run {
+                        val current = state.value ?: FeedModel()
+                        state.postValue(
+                            current.copy(
+                                loading = false,
+                                refreshing = false,
+                                error = true,
+                            )
+                        )
+                        return@thread
+                    }
+
                     val posts: List<Post> = gson.fromJson(body, listType)
-                    data.postValue(posts)
+                    state.postValue(
+                        FeedModel(
+                            posts = posts,
+                            loading = false,
+                            refreshing = false,
+                            error = false,          // успех — ошибка точно false
+                            empty = posts.isEmpty(),
+                        )
+                    )
                 }
             } catch (_: IOException) {
+                val current = state.value ?: FeedModel()
+                state.postValue(
+                    current.copy(
+                        loading = false,
+                        refreshing = false,
+                        error = true,
+                    )
+                )
             }
         }
     }
 
     override fun likeById(id: Long) {
         thread {
-            val current = data.value.orEmpty()
-            val post = current.find { it.id == id } ?: return@thread
+            val currentState = state.value ?: return@thread
+            val post = currentState.posts.find { it.id == id } ?: return@thread
 
             val requestBuilder = Request.Builder()
                 .url("${BASE_URL}api/posts/$id/likes")
@@ -75,22 +129,28 @@ class PostRepositoryRoomImpl : PostRepository {
             try {
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@thread
+
                     val body = response.body?.string() ?: return@thread
                     val updated: Post = gson.fromJson(body, postType)
 
-                    val updatedList = current.map { if (it.id == updated.id) updated else it }
-                    data.postValue(updatedList)
+                    val updatedPosts = currentState.posts.map { if (it.id == updated.id) updated else it }
+                    state.postValue(
+                        currentState.copy(
+                            posts = updatedPosts,
+                            empty = updatedPosts.isEmpty(),
+                        )
+                    )
                 }
             } catch (_: IOException) {
+                val cs = state.value ?: return@thread
+                state.postValue(cs.copy(error = true))
             }
         }
     }
 
     override fun shareById(id: Long) {
-        thread {
-            // На сервере не смог найти API для share
-            loadPosts()
-        }
+        // На сервере API для share нет — оставляем локальный счетчик (опционально) или просто refresh.
+        refresh()
     }
 
     override fun removeById(id: Long) {
@@ -104,12 +164,18 @@ class PostRepositoryRoomImpl : PostRepository {
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@thread
 
-                    // После удаления обновляем ленту локально: просто убираем пост из списка
-                    val current = data.value.orEmpty()
-                    val updatedList = current.filterNot { it.id == id }
-                    data.postValue(updatedList)
+                    val currentState = state.value ?: return@thread
+                    val updatedPosts = currentState.posts.filterNot { it.id == id }
+                    state.postValue(
+                        currentState.copy(
+                            posts = updatedPosts,
+                            empty = updatedPosts.isEmpty(),
+                        )
+                    )
                 }
             } catch (_: IOException) {
+                val cs = state.value ?: return@thread
+                state.postValue(cs.copy(error = true))
             }
         }
     }
@@ -127,19 +193,27 @@ class PostRepositoryRoomImpl : PostRepository {
             try {
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@thread
+
                     val responseBody = response.body?.string() ?: return@thread
                     val saved: Post = gson.fromJson(responseBody, postType)
 
-                    val current = data.value.orEmpty()
-
-                    val updatedList = if (post.id == 0L) {
-                        listOf(saved) + current
+                    val currentState = state.value ?: return@thread
+                    val updatedPosts = if (post.id == 0L) {
+                        listOf(saved) + currentState.posts
                     } else {
-                        current.map { if (it.id == saved.id) saved else it }
+                        currentState.posts.map { if (it.id == saved.id) saved else it }
                     }
-                    data.postValue(updatedList)
+
+                    state.postValue(
+                        currentState.copy(
+                            posts = updatedPosts,
+                            empty = updatedPosts.isEmpty(),
+                        )
+                    )
                 }
             } catch (_: IOException) {
+                val cs = state.value ?: return@thread
+                state.postValue(cs.copy(error = true))
             }
         }
 

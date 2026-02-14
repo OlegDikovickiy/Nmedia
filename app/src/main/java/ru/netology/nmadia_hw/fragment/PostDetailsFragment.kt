@@ -1,4 +1,4 @@
-package ru.netology.nmadia_hw.activity
+package ru.netology.nmadia_hw.fragment
 
 import android.content.Intent
 import android.net.Uri
@@ -13,8 +13,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
+import ru.netology.nmadia_hw.activity.EditPostFragment
 import ru.netology.nmadia_hw.databinding.FragmentPostDetailsBinding
 import ru.netology.nmadia_hw.dto.Post
+
 
 class PostDetailsFragment : Fragment() {
 
@@ -52,8 +54,8 @@ class PostDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            val post = posts.find { it.id == postId } ?: return@observe
+        viewModel.feed.observe(viewLifecycleOwner) { feed ->
+            val post = feed.posts.find { it.id == postId } ?: return@observe
             bindPost(post)
         }
     }
@@ -115,6 +117,7 @@ class PostDetailsFragment : Fragment() {
                                 parentFragmentManager.popBackStack()
                                 true
                             }
+
                             R.id.edit -> {
                                 viewModel.edit(post)
                                 parentFragmentManager.beginTransaction()
@@ -126,6 +129,7 @@ class PostDetailsFragment : Fragment() {
                                     .commit()
                                 true
                             }
+
                             else -> false
                         }
                     }

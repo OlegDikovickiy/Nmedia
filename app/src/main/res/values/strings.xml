@@ -16,4 +16,9 @@
     <string name="chooser_share_post">Share post</string>
     <string name="add_post">Add post</string>
     <string name="no_app_for_video">There is no app to open the video</string>
+
+    <string name="error_loading">Error loading</string>
+    <string name="retry">Retry</string>
+    <string name="empty_posts">No posts yet</string>
+
 </resources>

@@ -17,4 +17,9 @@
     <string name="chooser_share_post">Поделится постом</string>
     <string name="add_post">Добавить пост</string>
     <string name="no_app_for_video">Нет приложения для открытия видео</string>
+
+    <string name="error_loading">Ошибка загрузки</string>
+    <string name="retry">Повторить</string>
+    <string name="empty_posts">Пока нет постов</string>
+
 </resources>

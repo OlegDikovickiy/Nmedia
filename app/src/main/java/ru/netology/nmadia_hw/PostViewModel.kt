@@ -4,10 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import ru.netology.nmadia_hw.db.AppDb
 import ru.netology.nmadia_hw.dto.Post
+import ru.netology.nmadia_hw.model.FeedModel
 import ru.netology.nmadia_hw.repository.PostRepository
 import ru.netology.nmadia_hw.repository.PostRepositoryRoomImpl
+import ru.netology.nmadia_hw.util.SingleLiveEvent
 
 private val empty = Post(
     id = 0,
@@ -21,17 +22,18 @@ private val empty = Post(
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryRoomImpl(
-    )
+    private val repository: PostRepository = PostRepositoryRoomImpl()
 
-    val data: LiveData<List<Post>> = repository.getAll()
+    val feed: LiveData<FeedModel> = repository.getAll()
+
     val edited = MutableLiveData(empty)
 
     private val _isEditing = MutableLiveData(false)
     val isEditing: LiveData<Boolean> = _isEditing
 
-    private val _emptyShareError = MutableLiveData(false)
-    val emptyShareError: LiveData<Boolean> = _emptyShareError
+    val emptyShareErrorEvent = SingleLiveEvent<Unit>()
+
+    fun refresh() = repository.refresh()
 
     fun like(id: Long) = repository.likeById(id)
     fun share(id: Long) = repository.shareById(id)
@@ -59,10 +61,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun showEmptyShareError() {
-        _emptyShareError.value = true
-    }
-
-    fun clearEmptyShareError() {
-        _emptyShareError.value = false
+        emptyShareErrorEvent.value = Unit
     }
 }

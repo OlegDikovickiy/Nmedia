@@ -16,12 +16,13 @@ import ru.netology.nmadia_hw.adapter.OnInteractionListener
 import ru.netology.nmadia_hw.adapter.PostAdapter
 import ru.netology.nmadia_hw.databinding.FragmentPostsBinding
 import ru.netology.nmadia_hw.dto.Post
+import ru.netology.nmadia_hw.fragment.PostDetailsFragment
 import ru.netology.nmadia_hw.util.AndroidUtils
 
 class PostsFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(
-        ownerProducer = { requireActivity() } // общая ViewModel для всех фрагментов
+        ownerProducer = { requireActivity() }
     )
 
     private var _binding: FragmentPostsBinding? = null
@@ -95,8 +96,22 @@ class PostsFragment : Fragment() {
         binding.list.layoutManager = LinearLayoutManager(requireContext())
         binding.list.adapter = adapter
 
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts.toList())
+        binding.retry.setOnClickListener {
+            viewModel.refresh()
+        }
+
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.refresh()
+        }
+
+        viewModel.feed.observe(viewLifecycleOwner) { feed ->
+            adapter.submitList(feed.posts.toList())
+
+            binding.progress.visibility = if (feed.loading) View.VISIBLE else View.GONE
+            binding.errorGroup.visibility = if (feed.error) View.VISIBLE else View.GONE
+            binding.emptyGroup.visibility = if (feed.empty) View.VISIBLE else View.GONE
+
+            binding.swipeRefresh.isRefreshing = feed.refreshing
         }
 
         // Состояние редактирования
@@ -113,13 +128,11 @@ class PostsFragment : Fragment() {
             }
         }
 
-
         viewModel.isEditing.observe(viewLifecycleOwner) { isEditing ->
             binding.add.visibility = if (isEditing) View.GONE else View.VISIBLE
         }
 
         binding.add.setOnClickListener {
-            // Переход на фрагмент создания нового поста
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, NewPostFragment.newInstance())
                 .addToBackStack(null)
@@ -137,16 +150,12 @@ class PostsFragment : Fragment() {
             AndroidUtils.hideKeyboard(binding.content)
         }
 
-        // Ошибка пустого шэра (пришла из MainActivity через ViewModel)
-        viewModel.emptyShareError.observe(viewLifecycleOwner) { show ->
-            if (show == true) {
-                Toast.makeText(
-                    requireContext(),
-                    R.string.error_empty_content,
-                    Toast.LENGTH_SHORT
-                ).show()
-                viewModel.clearEmptyShareError()
-            }
+        viewModel.emptyShareErrorEvent.observe(viewLifecycleOwner) {
+            Toast.makeText(
+                requireContext(),
+                R.string.error_empty_content,
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
