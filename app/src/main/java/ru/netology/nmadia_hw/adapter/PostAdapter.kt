@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.databinding.CardPostBinding
+import ru.netology.nmadia_hw.dto.AttachmentType
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.repository.PostRepositoryRoomImpl
 
@@ -51,7 +52,8 @@ class PostViewHolder(
         viewsIcon.text = post.views.toString()
 
         // --- AVATAR через Glide ---
-        val avatarUrl = post.authorAvatar?.takeIf { it.isNotBlank() }
+        val avatarUrl = post.authorAvatar
+            ?.takeIf { it.isNotBlank() }
             ?.let { "${PostRepositoryRoomImpl.BASE_URL}avatars/$it" }
 
         Glide.with(avatar)
@@ -59,9 +61,29 @@ class PostViewHolder(
             .placeholder(R.drawable.outline_downloading_24)
             .error(R.drawable.outline_error_48)
             .circleCrop()
+            .dontAnimate()
             .timeout(10_000)
             .into(avatar)
 
+        // --- IMAGE ATTACHMENT через Glide ---
+        val att = post.attachment
+        if (att != null && att.type == AttachmentType.IMAGE) {
+            attachmentContainer.visibility = View.VISIBLE
+
+            val imageUrl = "${PostRepositoryRoomImpl.BASE_URL}images/${att.url}"
+
+            Glide.with(attachmentImage)
+                .load(imageUrl)
+                .placeholder(R.drawable.outline_downloading_24)
+                .error(R.drawable.outline_error_48)
+                .centerCrop()
+                .dontAnimate()
+                .timeout(10_000)
+                .into(attachmentImage)
+        } else {
+            attachmentContainer.visibility = View.GONE
+            attachmentImage.setImageDrawable(null)
+        }
 
         // Видео
         if (!post.video.isNullOrBlank()) {

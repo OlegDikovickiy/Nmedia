@@ -20,5 +20,6 @@
     <string name="error_loading">Error loading</string>
     <string name="retry">Retry</string>
     <string name="empty_posts">No posts yet</string>
+    <string name="description_attachment_image">Attachment image</string>
 
 </resources>

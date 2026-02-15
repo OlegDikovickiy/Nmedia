@@ -53,9 +53,9 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/common_spacing"
         android:background="@android:color/transparent"
+        android:contentDescription="@string/description_post_menu"
         android:minHeight="48dp"
         android:minWidth="48dp"
-        android:contentDescription="@string/description_post_menu"
         app:icon="@drawable/options_menu"
         app:iconTint="#000000"
         app:layout_constraintEnd_toEndOf="parent"
@@ -81,6 +81,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topBarrier" />
 
+    <!-- Вложение (картинка), по умолчанию скрыто -->
+    <FrameLayout
+        android:id="@+id/attachmentContainer"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/content">
+
+        <ImageView
+            android:id="@+id/attachmentImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/description_attachment_image"
+            android:scaleType="centerCrop"
+            tools:src="@drawable/video_placeholder" />
+    </FrameLayout>
+
     <!-- Блок видео (по умолчанию скрыт) -->
     <FrameLayout
         android:id="@+id/videoContainer"
@@ -90,7 +110,7 @@
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/content">
+        app:layout_constraintTop_toBottomOf="@id/attachmentContainer">
 
         <ImageView
             android:id="@+id/videoStub"
@@ -108,13 +128,13 @@
             android:src="@drawable/ic_play_video" />
     </FrameLayout>
 
-    <!-- Барьер, учитывающий и контент, и видео -->
+    <!-- Барьер, учитывающий контент, вложение и видео -->
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/contentVideoBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="content,videoContainer" />
+        app:constraint_referenced_ids="content,attachmentContainer,videoContainer" />
 
     <!-- Кнопки действий -->
     <com.google.android.material.button.MaterialButton
