@@ -3,6 +3,7 @@ package ru.netology.nmadia_hw.dto
 data class Post(
     val id: Long,
     val author: String,
+    val authorAvatar: String? = null,
     val published: String,
     val content: String,
     val likedByMe: Boolean,
@@ -10,4 +11,5 @@ data class Post(
     val shares: Int,
     val views: Int,
     val video: String? = null
+
 )
