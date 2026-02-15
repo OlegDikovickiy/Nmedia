@@ -4,15 +4,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.model.FeedModel
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.thread
 
 class PostRepositoryRoomImpl : PostRepository {
 
@@ -43,59 +45,21 @@ class PostRepositoryRoomImpl : PostRepository {
 
     private fun loadPosts(isRefreshing: Boolean) {
         val prev = state.value ?: FeedModel()
-
         state.postValue(
             prev.copy(
                 loading = !isRefreshing && prev.posts.isEmpty(),
                 refreshing = isRefreshing,
-                error = false,          // сброс ошибки при каждом запросе
+                error = false,
                 empty = false,
             )
         )
 
-        thread {
-            val request = Request.Builder()
-                .url("${BASE_URL}api/posts")
-                .build()
+        val request = Request.Builder()
+            .url("${BASE_URL}api/posts")
+            .build()
 
-            try {
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        val current = state.value ?: FeedModel()
-                        state.postValue(
-                            current.copy(
-                                loading = false,
-                                refreshing = false,
-                                error = true,
-                            )
-                        )
-                        return@thread
-                    }
-
-                    val body = response.body?.string() ?: run {
-                        val current = state.value ?: FeedModel()
-                        state.postValue(
-                            current.copy(
-                                loading = false,
-                                refreshing = false,
-                                error = true,
-                            )
-                        )
-                        return@thread
-                    }
-
-                    val posts: List<Post> = gson.fromJson(body, listType)
-                    state.postValue(
-                        FeedModel(
-                            posts = posts,
-                            loading = false,
-                            refreshing = false,
-                            error = false,          // успех — ошибка точно false
-                            empty = posts.isEmpty(),
-                        )
-                    )
-                }
-            } catch (_: IOException) {
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
                 val current = state.value ?: FeedModel()
                 state.postValue(
                     current.copy(
@@ -105,117 +69,163 @@ class PostRepositoryRoomImpl : PostRepository {
                     )
                 )
             }
-        }
-    }
 
-    override fun likeById(id: Long) {
-        thread {
-            val currentState = state.value ?: return@thread
-            val post = currentState.posts.find { it.id == id } ?: return@thread
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) {
+                        val current = state.value ?: FeedModel()
+                        state.postValue(
+                            current.copy(
+                                loading = false,
+                                refreshing = false,
+                                error = true,
+                            )
+                        )
+                        return
+                    }
 
-            val requestBuilder = Request.Builder()
-                .url("${BASE_URL}api/posts/$id/likes")
+                    val body = response.body?.string()
+                    if (body == null) {
+                        val current = state.value ?: FeedModel()
+                        state.postValue(
+                            current.copy(
+                                loading = false,
+                                refreshing = false,
+                                error = true,
+                            )
+                        )
+                        return
+                    }
 
-            val request = if (!post.likedByMe) {
-                requestBuilder
-                    .post("".toRequestBody(jsonType))
-                    .build()
-            } else {
-                requestBuilder
-                    .delete()
-                    .build()
-            }
-
-            try {
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@thread
-
-                    val body = response.body?.string() ?: return@thread
-                    val updated: Post = gson.fromJson(body, postType)
-
-                    val updatedPosts = currentState.posts.map { if (it.id == updated.id) updated else it }
+                    val posts: List<Post> = gson.fromJson(body, listType)
                     state.postValue(
-                        currentState.copy(
-                            posts = updatedPosts,
-                            empty = updatedPosts.isEmpty(),
+                        FeedModel(
+                            posts = posts,
+                            loading = false,
+                            refreshing = false,
+                            error = false,
+                            empty = posts.isEmpty(),
                         )
                     )
                 }
-            } catch (_: IOException) {
-                val cs = state.value ?: return@thread
+            }
+        })
+    }
+
+    override fun likeById(id: Long) {
+        val currentState = state.value ?: return
+        val post = currentState.posts.find { it.id == id } ?: return
+
+        val requestBuilder = Request.Builder()
+            .url("${BASE_URL}api/posts/$id/likes")
+
+        val request = if (!post.likedByMe) {
+            requestBuilder.post("".toRequestBody(jsonType)).build()
+        } else {
+            requestBuilder.delete().build()
+        }
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                val cs = state.value ?: FeedModel()
                 state.postValue(cs.copy(error = true))
             }
-        }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) return
+
+                    val body = response.body?.string() ?: return
+                    val updated: Post = gson.fromJson(body, postType)
+
+                    val cs = state.value ?: return
+                    val updatedPosts = cs.posts.map { if (it.id == updated.id) updated else it }
+                    state.postValue(
+                        cs.copy(
+                            posts = updatedPosts,
+                            empty = updatedPosts.isEmpty(),
+                            error = false,
+                        )
+                    )
+                }
+            }
+        })
     }
 
     override fun shareById(id: Long) {
-        // На сервере API для share нет — оставляем локальный счетчик (опционально) или просто refresh.
+        // Если на сервере нет API для share — просто обновляем список
         refresh()
     }
 
     override fun removeById(id: Long) {
-        thread {
-            val request = Request.Builder()
-                .url("${BASE_URL}api/posts/$id")
-                .delete()
-                .build()
+        val request = Request.Builder()
+            .url("${BASE_URL}api/posts/$id")
+            .delete()
+            .build()
 
-            try {
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@thread
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                val cs = state.value ?: FeedModel()
+                state.postValue(cs.copy(error = true))
+            }
 
-                    val currentState = state.value ?: return@thread
-                    val updatedPosts = currentState.posts.filterNot { it.id == id }
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) return
+
+                    val cs = state.value ?: return
+                    val updatedPosts = cs.posts.filterNot { it.id == id }
                     state.postValue(
-                        currentState.copy(
+                        cs.copy(
                             posts = updatedPosts,
                             empty = updatedPosts.isEmpty(),
+                            error = false,
                         )
                     )
                 }
-            } catch (_: IOException) {
-                val cs = state.value ?: return@thread
-                state.postValue(cs.copy(error = true))
             }
-        }
+        })
     }
 
     override fun save(post: Post): Post {
-        thread {
-            val json = gson.toJson(post)
-            val body = json.toRequestBody(jsonType)
+        val json = gson.toJson(post)
+        val body = json.toRequestBody(jsonType)
 
-            val request = Request.Builder()
-                .url("${BASE_URL}api/posts")
-                .post(body)
-                .build()
+        val request = Request.Builder()
+            .url("${BASE_URL}api/posts")
+            .post(body)
+            .build()
 
-            try {
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@thread
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                val cs = state.value ?: FeedModel()
+                state.postValue(cs.copy(error = true))
+            }
 
-                    val responseBody = response.body?.string() ?: return@thread
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) return
+
+                    val responseBody = response.body?.string() ?: return
                     val saved: Post = gson.fromJson(responseBody, postType)
 
-                    val currentState = state.value ?: return@thread
+                    val cs = state.value ?: return
                     val updatedPosts = if (post.id == 0L) {
-                        listOf(saved) + currentState.posts
+                        listOf(saved) + cs.posts
                     } else {
-                        currentState.posts.map { if (it.id == saved.id) saved else it }
+                        cs.posts.map { if (it.id == saved.id) saved else it }
                     }
 
                     state.postValue(
-                        currentState.copy(
+                        cs.copy(
                             posts = updatedPosts,
                             empty = updatedPosts.isEmpty(),
+                            error = false,
                         )
                     )
                 }
-            } catch (_: IOException) {
-                val cs = state.value ?: return@thread
-                state.postValue(cs.copy(error = true))
             }
-        }
+        })
 
         return post
     }
