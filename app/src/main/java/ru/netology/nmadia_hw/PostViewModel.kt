@@ -7,7 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.model.FeedModel
 import ru.netology.nmadia_hw.repository.PostRepository
-import ru.netology.nmadia_hw.repository.PostRepositoryRoomImpl
+import ru.netology.nmadia_hw.repository.PostRepositoryRetrofitImpl
 import ru.netology.nmadia_hw.util.SingleLiveEvent
 
 private val empty = Post(
@@ -22,7 +22,7 @@ private val empty = Post(
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryRoomImpl()
+    private val repository: PostRepository = PostRepositoryRetrofitImpl()
 
     val feed: LiveData<FeedModel> = repository.getAll()
 

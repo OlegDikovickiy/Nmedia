@@ -8,10 +8,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ru.netology.nmadia_hw.R
+import ru.netology.nmadia_hw.api.ApiConfig
 import ru.netology.nmadia_hw.databinding.CardPostBinding
 import ru.netology.nmadia_hw.dto.AttachmentType
 import ru.netology.nmadia_hw.dto.Post
-import ru.netology.nmadia_hw.repository.PostRepositoryRoomImpl
 
 interface OnInteractionListener {
     fun like(post: Post)
@@ -54,7 +54,7 @@ class PostViewHolder(
         // --- AVATAR через Glide ---
         val avatarUrl = post.authorAvatar
             ?.takeIf { it.isNotBlank() }
-            ?.let { "${PostRepositoryRoomImpl.BASE_URL}avatars/$it" }
+            ?.let { "${ApiConfig.BASE_URL}avatars/$it" }
 
         Glide.with(avatar)
             .load(avatarUrl)
@@ -65,12 +65,12 @@ class PostViewHolder(
             .timeout(10_000)
             .into(avatar)
 
-        // --- IMAGE ATTACHMENT через Glide ---
+        // --- ATTACHMENT (IMAGE) через Glide ---
         val att = post.attachment
         if (att != null && att.type == AttachmentType.IMAGE) {
             attachmentContainer.visibility = View.VISIBLE
 
-            val imageUrl = "${PostRepositoryRoomImpl.BASE_URL}images/${att.url}"
+            val imageUrl = "${ApiConfig.BASE_URL}images/${att.url}"
 
             Glide.with(attachmentImage)
                 .load(imageUrl)

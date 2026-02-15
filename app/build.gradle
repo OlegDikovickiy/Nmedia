@@ -8,8 +8,13 @@ android {
     namespace 'ru.netology.nmadia_hw'
     compileSdk 35
 
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+    }
+
     defaultConfig {
-        applicationId "ru.netology.nmedia"
+        applicationId "ru.netology.nmadia_hw"
         minSdk 24
         targetSdk 35
         versionCode 1
@@ -35,7 +40,6 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
-    buildFeatures.viewBinding = true
 }
 
 dependencies {
@@ -54,6 +58,7 @@ dependencies {
     def okhttp_version = "4.11.0"
     def swiperefreshlayout_version = "1.1.0"
     def glide_version = "4.16.0"
+    def retrofit_version = "2.11.0"
 
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$viewmodel_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$livedata_version"
@@ -69,6 +74,9 @@ dependencies {
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:$swiperefreshlayout_version"
     implementation "com.github.bumptech.glide:glide:$glide_version"
     kapt "com.github.bumptech.glide:compiler:$glide_version"
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation "com.squareup.okhttp3:logging-interceptor:$okhttp_version"
 
 
 

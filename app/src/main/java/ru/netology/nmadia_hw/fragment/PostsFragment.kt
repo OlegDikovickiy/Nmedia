@@ -111,6 +111,8 @@ class PostsFragment : Fragment() {
             binding.errorGroup.visibility = if (feed.error) View.VISIBLE else View.GONE
             binding.emptyGroup.visibility = if (feed.empty) View.VISIBLE else View.GONE
 
+            binding.errorText.text = feed.errorMessage ?: getString(R.string.error_loading)
+
             binding.swipeRefresh.isRefreshing = feed.refreshing
         }
 
@@ -119,6 +121,7 @@ class PostsFragment : Fragment() {
             val isEditing = post.id != 0L
             binding.editBlock.visibility = if (isEditing) View.VISIBLE else View.GONE
             binding.originalPreview.text = post.content
+
             if (isEditing) {
                 binding.content.setText(post.content)
                 binding.content.requestFocus()
