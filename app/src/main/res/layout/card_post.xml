@@ -8,7 +8,7 @@
     android:layout_height="wrap_content"
     android:padding="@dimen/common_spacing">
 
-    <!-- Аватар, автор, дата, меню -->
+    <!-- Аватар, автор, дата, статус, меню -->
     <ImageView
         android:id="@+id/avatar"
         android:layout_width="@dimen/posts_avatar_size"
@@ -28,7 +28,7 @@
         android:singleLine="true"
         tools:text="Author"
         app:layout_constraintBottom_toTopOf="@id/published"
-        app:layout_constraintEnd_toStartOf="@id/menu"
+        app:layout_constraintEnd_toStartOf="@id/statusIcon"
         app:layout_constraintStart_toEndOf="@id/avatar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
@@ -42,9 +42,23 @@
         android:layout_marginBottom="@dimen/common_spacing"
         tools:text="Published"
         app:layout_constraintBottom_toBottomOf="@id/topBarrier"
-        app:layout_constraintEnd_toStartOf="@id/menu"
+        app:layout_constraintEnd_toStartOf="@id/statusIcon"
         app:layout_constraintStart_toEndOf="@id/avatar"
         app:layout_constraintTop_toBottomOf="@id/author" />
+
+    <!-- Иконка статуса отправки (pending/pendingError) -->
+    <ImageView
+        android:id="@+id/statusIcon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginBottom="@dimen/common_spacing"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@string/description_post_status"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/menu"
+        app:layout_constraintTop_toTopOf="@id/menu"
+        app:layout_constraintBottom_toBottomOf="@id/menu"
+        tools:src="@drawable/outline_error_48" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/menu"
@@ -67,7 +81,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="avatar,published,menu" />
+        app:constraint_referenced_ids="avatar,published,statusIcon,menu" />
 
     <!-- Контент поста -->
     <TextView

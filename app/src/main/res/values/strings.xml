@@ -21,6 +21,7 @@
     <string name="retry">Retry</string>
     <string name="empty_posts">No posts yet</string>
     <string name="description_attachment_image">Attachment image</string>
+    <string name="description_post_status">The status of sending the post</string>
 
 
 </resources>

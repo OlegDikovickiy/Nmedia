@@ -27,9 +27,6 @@ interface PostDao {
     """)
     suspend fun likeById(id: Long)
 
-    @Query("UPDATE posts SET shares = shares + 1 WHERE id = :id")
-    suspend fun shareById(id: Long)
-
     @Query("DELETE FROM posts WHERE id = :id")
     suspend fun removeById(id: Long)
 
@@ -38,4 +35,26 @@ interface PostDao {
 
     @Query("SELECT likedByMe FROM posts WHERE id = :id")
     suspend fun getLikedByMe(id: Long): Boolean
+
+    @Query("SELECT pending FROM posts WHERE id = :id")
+    suspend fun isPending(id: Long): Boolean
+
+    @Query("SELECT * FROM posts WHERE pending = 1 ORDER BY id DESC")
+    suspend fun getPending(): List<PostEntity>
+
+    @Query("UPDATE posts SET pending = :pending, pendingError = :pendingError WHERE id = :id")
+    suspend fun setPendingState(id: Long, pending: Boolean, pendingError: Boolean)
+
+    @Query("UPDATE posts SET pendingError = :pendingError WHERE id = :id")
+    suspend fun setPendingError(id: Long, pendingError: Boolean)
+
+    // замена временного id на серверный (и одновременно сброс pending-флагов)
+    @Query("""
+        UPDATE posts SET
+            id = :serverId,
+            pending = 0,
+            pendingError = 0
+        WHERE id = :localId
+    """)
+    suspend fun replaceId(localId: Long, serverId: Long)
 }

@@ -2,7 +2,7 @@ package ru.netology.nmadia_hw.entity
 
 import ru.netology.nmadia_hw.dto.Post
 
-fun PostEntity.toDto() = Post(
+fun PostEntity.toDto(): Post = Post(
     id = id,
     author = author,
     authorAvatar = authorAvatar,
@@ -14,9 +14,14 @@ fun PostEntity.toDto() = Post(
     views = views,
     video = video,
     attachment = null,
+    pending = pending,
+    pendingError = pendingError,
 )
 
-fun Post.toEntity() = PostEntity(
+fun Post.toEntity(
+    pending: Boolean = false,
+    pendingError: Boolean = false,
+): PostEntity = PostEntity(
     id = id,
     author = author,
     authorAvatar = authorAvatar,
@@ -27,7 +32,13 @@ fun Post.toEntity() = PostEntity(
     shares = shares,
     views = views,
     video = video,
+    pending = pending,
+    pendingError = pendingError,
 )
 
 fun List<PostEntity>.toDto(): List<Post> = map(PostEntity::toDto)
-fun List<Post>.toEntity(): List<PostEntity> = map(Post::toEntity)
+
+fun List<Post>.toEntity(
+    pending: Boolean = false,
+    pendingError: Boolean = false,
+): List<PostEntity> = map { it.toEntity(pending = pending, pendingError = pendingError) }

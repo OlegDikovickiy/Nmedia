@@ -12,4 +12,8 @@ data class Post(
     val views: Int,
     val video: String? = null,
     val attachment: Attachment? = null,
+
+    // статус локального save
+    val pending: Boolean = false,
+    val pendingError: Boolean = false,
 )

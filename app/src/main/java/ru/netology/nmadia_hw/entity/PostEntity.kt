@@ -5,8 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "posts")
 data class PostEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
+    val id: Long,
     val author: String,
     val authorAvatar: String? = null,
     val published: String,
@@ -16,4 +16,8 @@ data class PostEntity(
     val shares: Int,
     val views: Int,
     val video: String? = null,
+
+    // статус синхронизации
+    val pending: Boolean = false,        // true = ещё не сохранён на сервере
+    val pendingError: Boolean = false,   // true = последняя попытка save в API упала
 )

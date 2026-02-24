@@ -22,5 +22,6 @@
     <string name="retry">Повторить</string>
     <string name="empty_posts">Пока нет постов</string>
     <string name="description_attachment_image">Изображение во вложении</string>
+    <string name="description_post_status">Статус отправки поста</string>
 
 </resources>

@@ -23,6 +23,8 @@ private val empty = Post(
     views = 0,
     video = null,
     attachment = null,
+    pending = false,
+    pendingError = false,
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
@@ -49,8 +51,20 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun loadPosts() = viewModelScope.launch {
         try {
             _dataState.value = FeedModel(loading = true, error = false, errorMessage = null)
+            repository.retryPendingSaves()
             repository.getAll()
             _dataState.value = FeedModel()
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
+
+    fun retry() = loadPosts()
+
+    fun retryPending() = viewModelScope.launch {
+        try {
+            _dataState.value = _dataState.value?.copy(error = false, errorMessage = null) ?: FeedModel()
+            repository.retryPendingSaves()
         } catch (e: AppError) {
             _dataState.value = FeedModel(error = true, errorMessage = e.message)
         }
@@ -59,6 +73,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh() = viewModelScope.launch {
         try {
             _dataState.value = FeedModel(refreshing = true, error = false, errorMessage = null)
+            repository.retryPendingSaves()
             repository.refresh()
             _dataState.value = FeedModel()
         } catch (e: AppError) {
@@ -81,7 +96,6 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             _dataState.value = FeedModel(error = true, errorMessage = e.message)
         }
     }
-
     fun like(id: Long) = likeById(id)
     fun remove(id: Long) = removeById(id)
 
@@ -97,9 +111,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         edited.value?.let {
             val content = text.trim()
             if (content.isNotBlank() && content != it.content) {
+                val draft = it.copy(content = content)
                 viewModelScope.launch {
                     try {
-                        repository.save(it.copy(content = content))
+                        repository.save(draft)
                     } catch (e: AppError) {
                         _dataState.value = FeedModel(error = true, errorMessage = e.message)
                     }

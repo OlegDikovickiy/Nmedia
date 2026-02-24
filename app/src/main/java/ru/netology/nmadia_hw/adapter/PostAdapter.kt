@@ -51,6 +51,22 @@ class PostViewHolder(
         repostIcon.text = post.shares.toString()
         viewsIcon.text = post.views.toString()
 
+        // --- статус отправки ---
+        when {
+            post.pendingError -> {
+                statusIcon.visibility = View.VISIBLE
+                statusIcon.setImageResource(R.drawable.outline_error_48)
+            }
+            post.pending -> {
+                statusIcon.visibility = View.VISIBLE
+                statusIcon.setImageResource(R.drawable.outline_error_48)
+            }
+            else -> {
+                statusIcon.visibility = View.GONE
+                statusIcon.setImageDrawable(null)
+            }
+        }
+
         // --- AVATAR через Glide ---
         val avatarUrl = post.authorAvatar
             ?.takeIf { it.isNotBlank() }
@@ -69,7 +85,6 @@ class PostViewHolder(
         val att = post.attachment
         if (att != null && att.type == AttachmentType.IMAGE) {
             attachmentContainer.visibility = View.VISIBLE
-
             val imageUrl = "${ApiConfig.BASE_URL}images/${att.url}"
 
             Glide.with(attachmentImage)
@@ -94,10 +109,17 @@ class PostViewHolder(
             videoContainer.setOnClickListener(null)
         }
 
-        likeIcon.setOnClickListener { onInteractionListener.like(post) }
+        // Несохранённый пост нельзя лайкнуть
+        likeIcon.isEnabled = !post.pending
+        likeIcon.alpha = if (post.pending) 0.5f else 1f
+        likeIcon.setOnClickListener {
+            if (!post.pending) {
+                onInteractionListener.like(post)
+            }
+        }
+
         repostIcon.setOnClickListener { onInteractionListener.share(post) }
         menu.setOnClickListener { onInteractionListener.openPost(post) }
-
         root.setOnClickListener { onInteractionListener.openPost(post) }
     }
 }

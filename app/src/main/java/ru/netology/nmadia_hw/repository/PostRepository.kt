@@ -13,4 +13,6 @@ interface PostRepository {
     suspend fun shareById(id: Long)
     suspend fun removeById(id: Long)
     suspend fun save(post: Post)
+
+    suspend fun retryPendingSaves()
 }
