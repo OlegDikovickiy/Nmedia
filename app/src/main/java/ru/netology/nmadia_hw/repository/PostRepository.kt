@@ -2,14 +2,15 @@ package ru.netology.nmadia_hw.repository
 
 import androidx.lifecycle.LiveData
 import ru.netology.nmadia_hw.dto.Post
-import ru.netology.nmadia_hw.model.FeedModel
 
 interface PostRepository {
-    fun getAll(): LiveData<FeedModel>
-    fun refresh()
+    val data: LiveData<List<Post>>
 
-    fun likeById(id: Long)
-    fun shareById(id: Long)
-    fun removeById(id: Long)
-    fun save(post: Post): Post
+    suspend fun getAll()
+    suspend fun refresh()
+
+    suspend fun likeById(id: Long)
+    suspend fun shareById(id: Long)
+    suspend fun removeById(id: Long)
+    suspend fun save(post: Post)
 }

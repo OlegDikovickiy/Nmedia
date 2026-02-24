@@ -1,30 +1,39 @@
 package ru.netology.nmadia_hw
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.*
+import kotlinx.coroutines.launch
+import ru.netology.nmadia_hw.db.AppDb
 import ru.netology.nmadia_hw.dto.Post
+import ru.netology.nmadia_hw.error.AppError
 import ru.netology.nmadia_hw.model.FeedModel
 import ru.netology.nmadia_hw.repository.PostRepository
-import ru.netology.nmadia_hw.repository.PostRepositoryRetrofitImpl
+import ru.netology.nmadia_hw.repository.PostRepositoryImpl
 import ru.netology.nmadia_hw.util.SingleLiveEvent
 
 private val empty = Post(
     id = 0,
     author = "",
+    authorAvatar = null,
     content = "",
     published = "",
     likes = 0,
     likedByMe = false,
     shares = 0,
     views = 0,
+    video = null,
+    attachment = null,
 )
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: PostRepository = PostRepositoryRetrofitImpl()
 
-    val feed: LiveData<FeedModel> = repository.getAll()
+    private val dao = AppDb.getInstance(application).postDao()
+    private val repository: PostRepository = PostRepositoryImpl(dao)
+
+    val data: LiveData<List<Post>> = repository.data
+
+    private val _dataState = MutableLiveData(FeedModel())
+    val dataState: LiveData<FeedModel> = _dataState
 
     val edited = MutableLiveData(empty)
 
@@ -33,17 +42,68 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     val emptyShareErrorEvent = SingleLiveEvent<Unit>()
 
-    fun refresh() = repository.refresh()
+    init {
+        loadPosts()
+    }
 
-    fun like(id: Long) = repository.likeById(id)
-    fun share(id: Long) = repository.shareById(id)
-    fun remove(id: Long) = repository.removeById(id)
+    fun loadPosts() = viewModelScope.launch {
+        try {
+            _dataState.value = FeedModel(loading = true, error = false, errorMessage = null)
+            repository.getAll()
+            _dataState.value = FeedModel()
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
+
+    fun refresh() = viewModelScope.launch {
+        try {
+            _dataState.value = FeedModel(refreshing = true, error = false, errorMessage = null)
+            repository.refresh()
+            _dataState.value = FeedModel()
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
+
+    fun likeById(id: Long) = viewModelScope.launch {
+        try {
+            repository.likeById(id)
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
+
+    fun removeById(id: Long) = viewModelScope.launch {
+        try {
+            repository.removeById(id)
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
+
+    fun like(id: Long) = likeById(id)
+    fun remove(id: Long) = removeById(id)
+
+    fun share(id: Long) = viewModelScope.launch {
+        try {
+            repository.shareById(id)
+        } catch (e: AppError) {
+            _dataState.value = FeedModel(error = true, errorMessage = e.message)
+        }
+    }
 
     fun save(text: String) {
         edited.value?.let {
             val content = text.trim()
             if (content.isNotBlank() && content != it.content) {
-                repository.save(it.copy(content = content))
+                viewModelScope.launch {
+                    try {
+                        repository.save(it.copy(content = content))
+                    } catch (e: AppError) {
+                        _dataState.value = FeedModel(error = true, errorMessage = e.message)
+                    }
+                }
             }
         }
         edited.value = empty

@@ -45,7 +45,9 @@ class PostsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val adapter = PostAdapter(object : OnInteractionListener {
-            override fun like(post: Post) = viewModel.like(post.id)
+            override fun like(post: Post) {
+                viewModel.like(post.id)
+            }
 
             override fun share(post: Post) {
                 viewModel.share(post.id)
@@ -97,26 +99,25 @@ class PostsFragment : Fragment() {
         binding.list.adapter = adapter
 
         binding.retry.setOnClickListener {
-            viewModel.refresh()
+            viewModel.loadPosts()
         }
 
         binding.swipeRefresh.setOnRefreshListener {
             viewModel.refresh()
         }
 
-        viewModel.feed.observe(viewLifecycleOwner) { feed ->
-            adapter.submitList(feed.posts.toList())
-
-            binding.progress.visibility = if (feed.loading) View.VISIBLE else View.GONE
-            binding.errorGroup.visibility = if (feed.error) View.VISIBLE else View.GONE
-            binding.emptyGroup.visibility = if (feed.empty) View.VISIBLE else View.GONE
-
-            binding.errorText.text = feed.errorMessage ?: getString(R.string.error_loading)
-
-            binding.swipeRefresh.isRefreshing = feed.refreshing
+        viewModel.data.observe(viewLifecycleOwner) { posts ->
+            adapter.submitList(posts)
+            binding.emptyGroup.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        // Состояние редактирования
+        viewModel.dataState.observe(viewLifecycleOwner) { state ->
+            binding.progress.visibility = if (state.loading) View.VISIBLE else View.GONE
+            binding.errorGroup.visibility = if (state.error) View.VISIBLE else View.GONE
+            binding.errorText.text = state.errorMessage ?: getString(R.string.error_loading)
+            binding.swipeRefresh.isRefreshing = state.refreshing
+        }
+
         viewModel.edited.observe(viewLifecycleOwner) { post ->
             val isEditing = post.id != 0L
             binding.editBlock.visibility = if (isEditing) View.VISIBLE else View.GONE

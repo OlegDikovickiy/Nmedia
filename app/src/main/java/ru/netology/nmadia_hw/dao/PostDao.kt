@@ -14,10 +14,10 @@ interface PostDao {
     fun getAll(): LiveData<List<PostEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(post: PostEntity): Long
+    suspend fun insert(post: PostEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(posts: List<PostEntity>)
+    suspend fun insert(posts: List<PostEntity>)
 
     @Query("""
         UPDATE posts SET
@@ -25,14 +25,17 @@ interface PostDao {
             likes = CASE WHEN likedByMe THEN likes - 1 ELSE likes + 1 END
         WHERE id = :id
     """)
-    fun likeById(id: Long)
+    suspend fun likeById(id: Long)
 
     @Query("UPDATE posts SET shares = shares + 1 WHERE id = :id")
-    fun shareById(id: Long)
+    suspend fun shareById(id: Long)
 
     @Query("DELETE FROM posts WHERE id = :id")
-    fun removeById(id: Long)
+    suspend fun removeById(id: Long)
 
     @Query("UPDATE posts SET content = :content WHERE id = :id")
-    fun updateContentById(id: Long, content: String)
+    suspend fun updateContentById(id: Long, content: String)
+
+    @Query("SELECT likedByMe FROM posts WHERE id = :id")
+    suspend fun getLikedByMe(id: Long): Boolean
 }

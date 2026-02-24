@@ -17,7 +17,6 @@ import ru.netology.nmadia_hw.activity.EditPostFragment
 import ru.netology.nmadia_hw.databinding.FragmentPostDetailsBinding
 import ru.netology.nmadia_hw.dto.Post
 
-
 class PostDetailsFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(
@@ -54,8 +53,8 @@ class PostDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.feed.observe(viewLifecycleOwner) { feed ->
-            val post = feed.posts.find { it.id == postId } ?: return@observe
+        viewModel.data.observe(viewLifecycleOwner) { posts ->
+            val post = posts.find { it.id == postId } ?: return@observe
             bindPost(post)
         }
     }
@@ -78,20 +77,14 @@ class PostDetailsFragment : Fragment() {
                     if (intent.resolveActivity(requireContext().packageManager) != null) {
                         startActivity(intent)
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            R.string.no_app_for_video,
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), R.string.no_app_for_video, Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
                 videoContainer.visibility = View.GONE
             }
 
-            likeIcon.setOnClickListener {
-                viewModel.like(post.id)
-            }
+            likeIcon.setOnClickListener { viewModel.like(post.id) }
 
             repostIcon.setOnClickListener {
                 viewModel.share(post.id)
@@ -99,12 +92,7 @@ class PostDetailsFragment : Fragment() {
                     putExtra(Intent.EXTRA_TEXT, post.content)
                     type = "text/plain"
                 }
-                startActivity(
-                    Intent.createChooser(
-                        intent,
-                        getString(R.string.chooser_share_post)
-                    )
-                )
+                startActivity(Intent.createChooser(intent, getString(R.string.chooser_share_post)))
             }
 
             menu.setOnClickListener { view ->
@@ -117,19 +105,14 @@ class PostDetailsFragment : Fragment() {
                                 parentFragmentManager.popBackStack()
                                 true
                             }
-
                             R.id.edit -> {
                                 viewModel.edit(post)
                                 parentFragmentManager.beginTransaction()
-                                    .replace(
-                                        R.id.fragment_container,
-                                        EditPostFragment.newInstance()
-                                    )
+                                    .replace(R.id.fragment_container, EditPostFragment.newInstance())
                                     .addToBackStack(null)
                                     .commit()
                                 true
                             }
-
                             else -> false
                         }
                     }
