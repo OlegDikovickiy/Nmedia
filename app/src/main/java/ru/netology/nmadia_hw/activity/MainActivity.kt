@@ -7,13 +7,23 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.databinding.ActivityMainBinding
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var firebaseMessaging: FirebaseMessaging
+
+    @Inject
+    lateinit var googleApiAvailability: GoogleApiAvailability
 
     private val viewModel: PostViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -36,12 +46,37 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
+        requestFirebaseToken()
+        checkGoogleApi()
+
         handleIncomingShareIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIncomingShareIntent(intent)
+    }
+
+    private fun requestFirebaseToken() {
+        firebaseMessaging.token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            println(token)
+        }
+    }
+
+    private fun checkGoogleApi() {
+        with(googleApiAvailability) {
+            val code = isGooglePlayServicesAvailable(this@MainActivity)
+            if (code != ConnectionResult.SUCCESS) {
+                if (isUserResolvableError(code)) {
+                    getErrorDialog(this@MainActivity, code, 9000)?.show()
+                }
+            }
+        }
     }
 
     private fun handleIncomingShareIntent(intent: Intent?) {
