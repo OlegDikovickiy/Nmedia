@@ -3,8 +3,8 @@ package ru.netology.nmadia_hw.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ru.netology.nmadia_hw.R
@@ -24,7 +24,7 @@ interface OnInteractionListener {
 
 class PostAdapter(
     private val onInteractionListener: OnInteractionListener,
-) : ListAdapter<Post, PostViewHolder>(PostDiffCallback()) {
+) : PagingDataAdapter<Post, PostViewHolder>(PostDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val binding = CardPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -32,7 +32,7 @@ class PostAdapter(
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        getItem(position)?.let(holder::bind)
     }
 }
 
@@ -51,23 +51,9 @@ class PostViewHolder(
         repostIcon.text = post.shares.toString()
         viewsIcon.text = post.views.toString()
 
-        // --- статус отправки ---
-        when {
-            post.pendingError -> {
-                statusIcon.visibility = View.VISIBLE
-                statusIcon.setImageResource(R.drawable.outline_error_48)
-            }
-            post.pending -> {
-                statusIcon.visibility = View.VISIBLE
-                statusIcon.setImageResource(R.drawable.outline_error_48)
-            }
-            else -> {
-                statusIcon.visibility = View.GONE
-                statusIcon.setImageDrawable(null)
-            }
-        }
+        statusIcon.visibility = View.GONE
+        statusIcon.setImageDrawable(null)
 
-        // --- AVATAR через Glide ---
         val avatarUrl = post.authorAvatar
             ?.takeIf { it.isNotBlank() }
             ?.let { "${ApiConfig.BASE_URL}avatars/$it" }
@@ -81,7 +67,6 @@ class PostViewHolder(
             .timeout(10_000)
             .into(avatar)
 
-        // --- ATTACHMENT (IMAGE) через Glide ---
         val att = post.attachment
         if (att != null && att.type == AttachmentType.IMAGE) {
             attachmentContainer.visibility = View.VISIBLE
@@ -100,7 +85,6 @@ class PostViewHolder(
             attachmentImage.setImageDrawable(null)
         }
 
-        // Видео
         if (!post.video.isNullOrBlank()) {
             videoContainer.visibility = View.VISIBLE
             videoContainer.setOnClickListener { onInteractionListener.openVideo(post.video!!) }
@@ -109,15 +93,7 @@ class PostViewHolder(
             videoContainer.setOnClickListener(null)
         }
 
-        // Несохранённый пост нельзя лайкнуть
-        likeIcon.isEnabled = !post.pending
-        likeIcon.alpha = if (post.pending) 0.5f else 1f
-        likeIcon.setOnClickListener {
-            if (!post.pending) {
-                onInteractionListener.like(post)
-            }
-        }
-
+        likeIcon.setOnClickListener { onInteractionListener.like(post) }
         repostIcon.setOnClickListener { onInteractionListener.share(post) }
         menu.setOnClickListener { onInteractionListener.openPost(post) }
         root.setOnClickListener { onInteractionListener.openPost(post) }

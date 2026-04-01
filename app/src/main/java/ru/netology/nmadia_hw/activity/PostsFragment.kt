@@ -9,8 +9,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.adapter.OnInteractionListener
@@ -18,7 +21,6 @@ import ru.netology.nmadia_hw.adapter.PostAdapter
 import ru.netology.nmadia_hw.databinding.FragmentPostsBinding
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.fragment.PostDetailsFragment
-import ru.netology.nmadia_hw.util.AndroidUtils
 
 @AndroidEntryPoint
 class PostsFragment : Fragment() {
@@ -47,31 +49,16 @@ class PostsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val adapter = PostAdapter(object : OnInteractionListener {
-            override fun like(post: Post) {
-                viewModel.like(post.id)
-            }
-
+            override fun like(post: Post) = Unit
             override fun share(post: Post) {
-                viewModel.share(post.id)
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     putExtra(Intent.EXTRA_TEXT, post.content)
                     type = "text/plain"
                 }
-                startActivity(
-                    Intent.createChooser(
-                        intent,
-                        getString(R.string.chooser_share_post)
-                    )
-                )
+                startActivity(Intent.createChooser(intent, getString(R.string.chooser_share_post)))
             }
-
-            override fun remove(post: Post) {
-                viewModel.remove(post.id)
-            }
-
-            override fun edit(post: Post) {
-                viewModel.edit(post)
-            }
+            override fun remove(post: Post) = Unit
+            override fun edit(post: Post) = Unit
 
             override fun openVideo(url: String) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -88,10 +75,7 @@ class PostsFragment : Fragment() {
 
             override fun openPost(post: Post) {
                 parentFragmentManager.beginTransaction()
-                    .replace(
-                        R.id.fragment_container,
-                        PostDetailsFragment.newInstance(post.id)
-                    )
+                    .replace(R.id.fragment_container, PostDetailsFragment.newInstance(post.id))
                     .addToBackStack(null)
                     .commit()
             }
@@ -100,69 +84,64 @@ class PostsFragment : Fragment() {
         binding.list.layoutManager = LinearLayoutManager(requireContext())
         binding.list.adapter = adapter
 
-        binding.retry.setOnClickListener {
-            viewModel.loadPosts()
-        }
-
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
-        }
-
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts)
-            binding.emptyGroup.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
-        }
-
-        viewModel.dataState.observe(viewLifecycleOwner) { state ->
-            binding.progress.visibility = if (state.loading) View.VISIBLE else View.GONE
-            binding.errorGroup.visibility = if (state.error) View.VISIBLE else View.GONE
-            binding.errorText.text = state.errorMessage ?: getString(R.string.error_loading)
-            binding.swipeRefresh.isRefreshing = state.refreshing
-        }
-
-        viewModel.edited.observe(viewLifecycleOwner) { post ->
-            val isEditing = post.id != 0L
-            binding.editBlock.visibility = if (isEditing) View.VISIBLE else View.GONE
-            binding.originalPreview.text = post.content
-
-            if (isEditing) {
-                binding.content.setText(post.content)
-                binding.content.requestFocus()
-                AndroidUtils.showKeyboard(binding.content)
-            } else {
-                binding.content.text = null
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.data.collect { pagingData ->
+                adapter.submitData(pagingData)
             }
         }
 
-        viewModel.isEditing.observe(viewLifecycleOwner) { isEditing ->
-            binding.add.visibility = if (isEditing) View.GONE else View.VISIBLE
+        viewLifecycleOwner.lifecycleScope.launch {
+            adapter.loadStateFlow.collect { state ->
+                val isLoading =
+                    state.refresh is LoadState.Loading ||
+                            state.append is LoadState.Loading ||
+                            state.prepend is LoadState.Loading
+
+                binding.swipeRefresh.isRefreshing = isLoading
+                binding.progress.visibility =
+                    if (state.refresh is LoadState.Loading) View.VISIBLE else View.GONE
+
+                val refreshError = state.refresh as? LoadState.Error
+                binding.errorGroup.visibility =
+                    if (refreshError != null) View.VISIBLE else View.GONE
+                binding.errorText.text =
+                    refreshError?.error?.message ?: getString(R.string.error_loading)
+
+                val isEmpty =
+                    state.refresh is LoadState.NotLoading && adapter.itemCount == 0
+                binding.emptyGroup.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            }
         }
 
-        binding.add.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, NewPostFragment.newInstance())
-                .addToBackStack(null)
-                .commit()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.newerCount.collect { count ->
+                if (count > 0) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Новых постов: $count",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
 
-        binding.cancelEdit.setOnClickListener {
-            viewModel.cancelEdit()
-            AndroidUtils.hideKeyboard(binding.content)
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.checkNewer()
+            viewModel.refreshFeed()
+            adapter.refresh()
         }
 
-        binding.save.setOnClickListener {
-            val text = binding.content.text.toString()
-            viewModel.save(text)
-            AndroidUtils.hideKeyboard(binding.content)
+        binding.retry.setOnClickListener {
+            adapter.retry()
         }
 
-        viewModel.emptyShareErrorEvent.observe(viewLifecycleOwner) {
-            Toast.makeText(
-                requireContext(),
-                R.string.error_empty_content,
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        binding.add.visibility = View.GONE
+        binding.bottomPanel.visibility = View.GONE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.checkNewer()
     }
 
     override fun onDestroyView() {

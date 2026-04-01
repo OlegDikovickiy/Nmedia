@@ -14,7 +14,6 @@ import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
-import ru.netology.nmadia_hw.activity.EditPostFragment
 import ru.netology.nmadia_hw.databinding.FragmentPostDetailsBinding
 import ru.netology.nmadia_hw.dto.Post
 
@@ -54,11 +53,6 @@ class PostDetailsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        viewModel.data.observe(viewLifecycleOwner) { posts ->
-            val post = posts.find { it.id == postId } ?: return@observe
-            bindPost(post)
-        }
     }
 
     private fun bindPost(post: Post) {
@@ -79,17 +73,18 @@ class PostDetailsFragment : Fragment() {
                     if (intent.resolveActivity(requireContext().packageManager) != null) {
                         startActivity(intent)
                     } else {
-                        Toast.makeText(requireContext(), R.string.no_app_for_video, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.no_app_for_video,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } else {
                 videoContainer.visibility = View.GONE
             }
 
-            likeIcon.setOnClickListener { viewModel.like(post.id) }
-
             repostIcon.setOnClickListener {
-                viewModel.share(post.id)
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     putExtra(Intent.EXTRA_TEXT, post.content)
                     type = "text/plain"
@@ -103,17 +98,11 @@ class PostDetailsFragment : Fragment() {
                     setOnMenuItemClickListener { item ->
                         when (item.itemId) {
                             R.id.remove -> {
-                                viewModel.remove(post.id)
                                 parentFragmentManager.popBackStack()
                                 true
                             }
                             R.id.edit -> {
-                                viewModel.edit(post)
-                                parentFragmentManager.beginTransaction()
-                                    .replace(R.id.fragment_container, EditPostFragment.newInstance())
-                                    .addToBackStack(null)
-                                    .commit()
-                                true
+                                false
                             }
                             else -> false
                         }

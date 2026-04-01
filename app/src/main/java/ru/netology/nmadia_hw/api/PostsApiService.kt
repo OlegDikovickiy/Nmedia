@@ -5,8 +5,20 @@ import retrofit2.http.*
 import ru.netology.nmadia_hw.dto.Post
 
 interface PostsApiService {
-    @GET("api/posts")
-    suspend fun getAll(): Response<List<Post>>
+    @GET("api/posts/latest")
+    suspend fun getLatest(@Query("count") count: Int): Response<List<Post>>
+
+    @GET("api/posts/{id}/before")
+    suspend fun getBefore(
+        @Path("id") id: Long,
+        @Query("count") count: Int,
+    ): Response<List<Post>>
+
+    @GET("api/posts/{id}/after")
+    suspend fun getAfter(
+        @Path("id") id: Long,
+        @Query("count") count: Int,
+    ): Response<List<Post>>
 
     @POST("api/posts")
     suspend fun save(@Body post: Post): Response<Post>

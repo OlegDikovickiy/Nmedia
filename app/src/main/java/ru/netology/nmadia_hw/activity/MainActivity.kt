@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
 
         requestFirebaseToken()
         checkGoogleApi()
-
         handleIncomingShareIntent(intent)
     }
 
@@ -71,10 +70,8 @@ class MainActivity : AppCompatActivity() {
     private fun checkGoogleApi() {
         with(googleApiAvailability) {
             val code = isGooglePlayServicesAvailable(this@MainActivity)
-            if (code != ConnectionResult.SUCCESS) {
-                if (isUserResolvableError(code)) {
-                    getErrorDialog(this@MainActivity, code, 9000)?.show()
-                }
+            if (code != ConnectionResult.SUCCESS && isUserResolvableError(code)) {
+                getErrorDialog(this@MainActivity, code, 9000)?.show()
             }
         }
     }
@@ -88,13 +85,5 @@ class MainActivity : AppCompatActivity() {
             viewModel.showEmptyShareError()
             return
         }
-
-        supportFragmentManager.beginTransaction()
-            .replace(
-                R.id.fragment_container,
-                NewPostFragment.newInstance(initialContent = text)
-            )
-            .addToBackStack(null)
-            .commit()
     }
 }
