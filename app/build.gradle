@@ -3,10 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     id("kotlin-kapt")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace 'ru.netology.nmadia_hw'
+    namespace 'ru.netology.nmedia'
     compileSdk 35
 
     buildFeatures {
@@ -15,7 +16,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "ru.netology.nmadia_hw"
+        applicationId "ru.netology.nmedia"
         minSdk 24
         targetSdk 35
         versionCode 1
@@ -66,6 +67,7 @@ dependencies {
     def glide_version = "4.16.0"
     def retrofit_version = "2.11.0"
     def coroutines_version = "1.8.1"
+    def paging_version = "3.3.0"
 
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$viewmodel_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$livedata_version"
@@ -86,6 +88,7 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
     implementation "com.squareup.okhttp3:logging-interceptor:$okhttp_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    implementation "androidx.paging:paging-runtime-ktx:$paging_version"
 
     implementation libs.hilt.android
     kapt libs.hilt.compiler

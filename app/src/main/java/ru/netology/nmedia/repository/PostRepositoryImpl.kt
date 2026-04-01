@@ -1,0 +1,155 @@
+package ru.netology.nmedia.repository
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import ru.netology.nmedia.api.PostsApiService
+import ru.netology.nmedia.dao.PostDao
+import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.entity.toDto
+import ru.netology.nmedia.entity.toEntity
+import ru.netology.nmedia.error.ApiError
+import ru.netology.nmedia.error.NetworkError
+import ru.netology.nmedia.error.UnknownError
+import ru.netology.nmedia.util.LocalId
+import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class PostRepositoryImpl @Inject constructor(
+    private val dao: PostDao,
+    private val apiService: PostsApiService,
+) : PostRepository {
+
+    override val data: LiveData<List<Post>> = dao.getAll().map { it.toDto() }
+
+    override suspend fun getAll() {
+        try {
+            val response = apiService.getAll()
+            if (!response.isSuccessful) throw ApiError(response.code(), response.message())
+            val body = response.body() ?: throw ApiError(response.code(), response.message())
+
+            withContext(Dispatchers.IO) {
+                dao.insert(body.map { it.toEntity(pending = false, pendingError = false) })
+            }
+        } catch (e: IOException) {
+            throw NetworkError
+        } catch (e: ApiError) {
+            throw e
+        } catch (e: Exception) {
+            throw UnknownError
+        }
+    }
+
+    override suspend fun refresh() = getAll()
+
+    override suspend fun likeById(id: Long) {
+        if (withContext(Dispatchers.IO) { dao.isPending(id) }) {
+            throw ApiError(400, "Нельзя лайкать несохранённый пост")
+        }
+
+        try {
+            withContext(Dispatchers.IO) { dao.likeById(id) }
+
+            val likedNow = withContext(Dispatchers.IO) { dao.getLikedByMe(id) }
+            val response = if (likedNow) {
+                apiService.likeById(id)
+            } else {
+                apiService.dislikeById(id)
+            }
+
+            if (!response.isSuccessful) throw ApiError(response.code(), response.message())
+            response.body() ?: throw ApiError(response.code(), response.message())
+        } catch (e: IOException) {
+            withContext(Dispatchers.IO) { dao.likeById(id) }
+            throw NetworkError
+        } catch (e: ApiError) {
+            withContext(Dispatchers.IO) { dao.likeById(id) }
+            throw e
+        } catch (e: Exception) {
+            withContext(Dispatchers.IO) { dao.likeById(id) }
+            throw UnknownError
+        }
+    }
+
+    override suspend fun shareById(id: Long) {
+        getAll()
+    }
+
+    override suspend fun removeById(id: Long) {
+        try {
+            withContext(Dispatchers.IO) { dao.removeById(id) }
+
+            if (id < 0) return
+
+            val response = apiService.removeById(id)
+            if (!response.isSuccessful) throw ApiError(response.code(), response.message())
+        } catch (e: IOException) {
+            getAll()
+            throw NetworkError
+        } catch (e: ApiError) {
+            getAll()
+            throw e
+        } catch (e: Exception) {
+            getAll()
+            throw UnknownError
+        }
+    }
+
+    override suspend fun save(post: Post) {
+        val localId = if (post.id == 0L) LocalId.nextId() else post.id
+
+        val localPost = post.copy(id = localId)
+        withContext(Dispatchers.IO) {
+            dao.insert(localPost.toEntity(pending = true, pendingError = false))
+        }
+
+        try {
+            val request = localPost.copy(id = 0L)
+            val response = apiService.save(request)
+            if (!response.isSuccessful) throw ApiError(response.code(), response.message())
+
+            val saved = response.body() ?: throw ApiError(response.code(), response.message())
+
+            withContext(Dispatchers.IO) {
+                dao.replaceId(localId = localId, serverId = saved.id)
+                dao.insert(saved.toEntity(pending = false, pendingError = false))
+            }
+        } catch (e: IOException) {
+            withContext(Dispatchers.IO) { dao.setPendingError(localId, true) }
+            throw NetworkError
+        } catch (e: ApiError) {
+            withContext(Dispatchers.IO) { dao.setPendingError(localId, true) }
+            throw e
+        } catch (e: Exception) {
+            withContext(Dispatchers.IO) { dao.setPendingError(localId, true) }
+            throw UnknownError
+        }
+    }
+
+    override suspend fun retryPendingSaves() {
+        val pending = withContext(Dispatchers.IO) { dao.getPending() }
+        for (entity in pending) {
+            try {
+                withContext(Dispatchers.IO) {
+                    dao.setPendingState(entity.id, pending = true, pendingError = false)
+                }
+
+                val dto = entity.toDto().copy(id = 0L)
+                val response = apiService.save(dto)
+                if (!response.isSuccessful) throw ApiError(response.code(), response.message())
+
+                val saved = response.body() ?: throw ApiError(response.code(), response.message())
+
+                withContext(Dispatchers.IO) {
+                    dao.replaceId(localId = entity.id, serverId = saved.id)
+                    dao.insert(saved.toEntity(pending = false, pendingError = false))
+                }
+            } catch (_: Exception) {
+                withContext(Dispatchers.IO) { dao.setPendingError(entity.id, true) }
+            }
+        }
+    }
+}
