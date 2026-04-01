@@ -7,10 +7,12 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.databinding.FragmentNewPostBinding
 import ru.netology.nmadia_hw.util.AndroidUtils
 
+@AndroidEntryPoint
 class NewPostFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(
@@ -50,7 +52,6 @@ class NewPostFragment : Fragment() {
             val text = binding.edit.text.toString()
             val trimmed = text.trim()
             if (trimmed.isBlank()) {
-                // просто закрываемся, ничего не сохраняем
                 parentFragmentManager.popBackStack()
                 return@setOnClickListener
             }

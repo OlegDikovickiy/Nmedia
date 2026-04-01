@@ -1,17 +1,18 @@
 package ru.netology.nmadia_hw.activity
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.databinding.ActivityMainBinding
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: PostViewModel by viewModels()
@@ -52,6 +53,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.showEmptyShareError()
             return
         }
+
         supportFragmentManager.beginTransaction()
             .replace(
                 R.id.fragment_container,

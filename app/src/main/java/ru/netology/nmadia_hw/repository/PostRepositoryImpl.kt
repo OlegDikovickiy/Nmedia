@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import ru.netology.nmadia_hw.api.PostsApi
+import ru.netology.nmadia_hw.api.PostsApiService
 import ru.netology.nmadia_hw.dao.PostDao
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.entity.toDto
@@ -14,16 +14,20 @@ import ru.netology.nmadia_hw.error.NetworkError
 import ru.netology.nmadia_hw.error.UnknownError
 import ru.netology.nmadia_hw.util.LocalId
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PostRepositoryImpl(
+@Singleton
+class PostRepositoryImpl @Inject constructor(
     private val dao: PostDao,
+    private val apiService: PostsApiService,
 ) : PostRepository {
 
     override val data: LiveData<List<Post>> = dao.getAll().map { it.toDto() }
 
     override suspend fun getAll() {
         try {
-            val response = PostsApi.service.getAll()
+            val response = apiService.getAll()
             if (!response.isSuccessful) throw ApiError(response.code(), response.message())
             val body = response.body() ?: throw ApiError(response.code(), response.message())
 
@@ -32,6 +36,8 @@ class PostRepositoryImpl(
             }
         } catch (e: IOException) {
             throw NetworkError
+        } catch (e: ApiError) {
+            throw e
         } catch (e: Exception) {
             throw UnknownError
         }
@@ -48,7 +54,11 @@ class PostRepositoryImpl(
             withContext(Dispatchers.IO) { dao.likeById(id) }
 
             val likedNow = withContext(Dispatchers.IO) { dao.getLikedByMe(id) }
-            val response = if (likedNow) PostsApi.service.likeById(id) else PostsApi.service.dislikeById(id)
+            val response = if (likedNow) {
+                apiService.likeById(id)
+            } else {
+                apiService.dislikeById(id)
+            }
 
             if (!response.isSuccessful) throw ApiError(response.code(), response.message())
             response.body() ?: throw ApiError(response.code(), response.message())
@@ -72,10 +82,9 @@ class PostRepositoryImpl(
         try {
             withContext(Dispatchers.IO) { dao.removeById(id) }
 
-            // если это pending-пост, на сервер не ходим
             if (id < 0) return
 
-            val response = PostsApi.service.removeById(id)
+            val response = apiService.removeById(id)
             if (!response.isSuccessful) throw ApiError(response.code(), response.message())
         } catch (e: IOException) {
             getAll()
@@ -96,15 +105,15 @@ class PostRepositoryImpl(
         withContext(Dispatchers.IO) {
             dao.insert(localPost.toEntity(pending = true, pendingError = false))
         }
+
         try {
-            val request = localPost.copy(id = 0L) // на сервер отправляем как новый
-            val response = PostsApi.service.save(request)
+            val request = localPost.copy(id = 0L)
+            val response = apiService.save(request)
             if (!response.isSuccessful) throw ApiError(response.code(), response.message())
 
             val saved = response.body() ?: throw ApiError(response.code(), response.message())
 
             withContext(Dispatchers.IO) {
-                // заменяем временный id на серверный
                 dao.replaceId(localId = localId, serverId = saved.id)
                 dao.insert(saved.toEntity(pending = false, pendingError = false))
             }
@@ -120,15 +129,16 @@ class PostRepositoryImpl(
         }
     }
 
-    // Для Retry
     override suspend fun retryPendingSaves() {
         val pending = withContext(Dispatchers.IO) { dao.getPending() }
         for (entity in pending) {
             try {
-                withContext(Dispatchers.IO) { dao.setPendingState(entity.id, pending = true, pendingError = false) }
+                withContext(Dispatchers.IO) {
+                    dao.setPendingState(entity.id, pending = true, pendingError = false)
+                }
 
                 val dto = entity.toDto().copy(id = 0L)
-                val response = PostsApi.service.save(dto)
+                val response = apiService.save(dto)
                 if (!response.isSuccessful) throw ApiError(response.code(), response.message())
 
                 val saved = response.body() ?: throw ApiError(response.code(), response.message())
@@ -137,7 +147,7 @@ class PostRepositoryImpl(
                     dao.replaceId(localId = entity.id, serverId = saved.id)
                     dao.insert(saved.toEntity(pending = false, pendingError = false))
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 withContext(Dispatchers.IO) { dao.setPendingError(entity.id, true) }
             }
         }

@@ -1,15 +1,17 @@
 package ru.netology.nmadia_hw
 
-import android.app.Application
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import ru.netology.nmadia_hw.db.AppDb
 import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.error.AppError
 import ru.netology.nmadia_hw.model.FeedModel
 import ru.netology.nmadia_hw.repository.PostRepository
-import ru.netology.nmadia_hw.repository.PostRepositoryImpl
 import ru.netology.nmadia_hw.util.SingleLiveEvent
+import javax.inject.Inject
 
 private val empty = Post(
     id = 0,
@@ -27,10 +29,10 @@ private val empty = Post(
     pendingError = false,
 )
 
-class PostViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val dao = AppDb.getInstance(application).postDao()
-    private val repository: PostRepository = PostRepositoryImpl(dao)
+@HiltViewModel
+class PostViewModel @Inject constructor(
+    private val repository: PostRepository,
+) : ViewModel() {
 
     val data: LiveData<List<Post>> = repository.data
 
@@ -96,6 +98,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             _dataState.value = FeedModel(error = true, errorMessage = e.message)
         }
     }
+
     fun like(id: Long) = likeById(id)
     fun remove(id: Long) = removeById(id)
 

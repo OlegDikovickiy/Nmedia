@@ -6,10 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.databinding.FragmentEditPostBinding
 import ru.netology.nmadia_hw.util.AndroidUtils
 
+@AndroidEntryPoint
 class EditPostFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(

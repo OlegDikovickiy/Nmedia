@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.adapter.OnInteractionListener
@@ -19,6 +20,7 @@ import ru.netology.nmadia_hw.dto.Post
 import ru.netology.nmadia_hw.fragment.PostDetailsFragment
 import ru.netology.nmadia_hw.util.AndroidUtils
 
+@AndroidEntryPoint
 class PostsFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(

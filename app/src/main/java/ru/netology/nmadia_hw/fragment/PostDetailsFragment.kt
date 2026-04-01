@@ -11,12 +11,14 @@ import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import ru.netology.nmadia_hw.PostViewModel
 import ru.netology.nmadia_hw.R
 import ru.netology.nmadia_hw.activity.EditPostFragment
 import ru.netology.nmadia_hw.databinding.FragmentPostDetailsBinding
 import ru.netology.nmadia_hw.dto.Post
 
+@AndroidEntryPoint
 class PostDetailsFragment : Fragment() {
 
     private val viewModel: PostViewModel by viewModels(
